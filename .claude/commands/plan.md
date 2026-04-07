@@ -14,6 +14,7 @@
 {
   "moduleName": "模块名称",
   "summary": "一句话概括这个模块做什么",
+  "createdAt": "生成日期",
   "tasks": [
     {
       "taskId": "T001",
@@ -24,7 +25,8 @@
       "props": {},
       "dependencies": ["依赖的其他 taskId"],
       "reuseComponents": ["可复用的已有组件"],
-      "acceptanceCriteria": ["验收条件1", "验收条件2"]
+      "acceptanceCriteria": ["验收条件1", "验收条件2"],
+      "status": "pending"
     }
   ],
   "routeConfig": {
@@ -42,6 +44,12 @@
 - 标注哪些已有组件可以复用
 - 每个任务都要有明确的验收标准
 - 边界场景必须考虑: 空状态、加载中、错误、权限不足
+
+## 输出方式
+
+1. 先在终端中输出完整的任务清单供我预览
+2. 然后将任务清单保存到本地文件: docs/tasks/tasks-[模块名英文]-[当天日期].json
+3. 如果 docs/tasks/ 目录不存在, 请先创建
 
 需求如下:
 $ARGUMENTS

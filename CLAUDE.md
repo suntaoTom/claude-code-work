@@ -43,6 +43,7 @@ UmiJS 4 + React 18 + TypeScript 5 + Ant Design 5 (@umijs/max)
 ## 文件说明规范（必须遵守）
 
 每次创建/修改代码文件时，必须同步维护：
+
 1. 所在目录的 `README.md`（文件清单表格）
 2. 文件顶部 JSDoc 注释（@description / @module / @dependencies）
 3. 功能模块的模块级 `README.md`（业务流程 + 对外暴露）
@@ -57,9 +58,26 @@ UmiJS 4 + React 18 + TypeScript 5 + Ant Design 5 (@umijs/max)
 - 不要使用 any 类型，必须明确类型定义
 - 不要使用 inline style，用 CSS Modules 或 Ant Design 组件样式
 - 图片资源放在 public/images/
-- 环境变量以 UMI_APP_ 开头
+- 环境变量以 UMI*APP* 开头
 - 所有异步操作必须有 loading 和 error 状态处理
 - 表单必须有验证和错误提示（antd Form 内置验证）
 - 列表页必须处理空状态（antd Empty）
 - 页面组件放 pages/，业务逻辑放 features/，不要混在一起
 - mock 数据放 mock/ 目录，使用 Umi 内置 mock 功能
+
+---
+
+## 项目工作流文档
+
+### docs/ 目录结构
+
+- docs/tasks/ — 存放 /plan 命令生成的 JSON 任务清单, 每个文件对应一个功能模块
+- docs/prds/ — 存放产品需求文档 (.md 格式)
+- 详细说明见 docs/README.md
+
+### 任务清单使用方式
+
+- 编码前先读取对应的任务清单: @docs/tasks/tasks-xxx.json
+- 按 taskId 顺序和 dependencies 依赖关系执行任务
+- 每完成一个任务, 将其 status 更新为 "done"
+- status 取值: pending (待开发) | in-progress (开发中) | done (已完成) | blocked (被阻塞)
