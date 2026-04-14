@@ -17,7 +17,7 @@
         "Ant Design 组件可用",
         "主题 token 统一定义在 theme.ts"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "taskId": "T002",
@@ -26,14 +26,18 @@
       "filePath": "src/app.ts",
       "description": "配置全局 request 拦截器（请求头注入、响应格式化、错误统一处理 errorHandler），配置 layout 基础信息",
       "props": {},
-      "dependencies": ["T001"],
-      "reuseComponents": ["@umijs/plugin-request"],
+      "dependencies": [
+        "T001"
+      ],
+      "reuseComponents": [
+        "@umijs/plugin-request"
+      ],
       "acceptanceCriteria": [
         "请求自动带 Content-Type",
         "响应拦截统一处理错误码",
         "网络异常有友好提示"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "taskId": "T003",
@@ -42,14 +46,16 @@
       "filePath": "src/features/list/types/types.ts",
       "description": "定义列表模块所有类型：ListItem（列表项）、ListQueryParams（查询参数，含 keyword/status/page/pageSize）、ListResponse（分页响应，含 data/total/page/pageSize）",
       "props": {},
-      "dependencies": ["T001"],
+      "dependencies": [
+        "T001"
+      ],
       "reuseComponents": [],
       "acceptanceCriteria": [
         "所有字段有明确类型，无 any",
         "分页参数类型可复用",
         "导出所有类型供其他文件引用"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "taskId": "T004",
@@ -58,14 +64,16 @@
       "filePath": "src/features/list/constants.ts",
       "description": "定义模块常量：PAGE_SIZE（默认分页大小）、STATUS 枚举及 STATUS_OPTIONS 映射表、TABLE_COLUMNS 配置（含国际化 key）",
       "props": {},
-      "dependencies": ["T003"],
+      "dependencies": [
+        "T003"
+      ],
       "reuseComponents": [],
       "acceptanceCriteria": [
         "无硬编码魔法数字",
         "枚举值与后端约定一致",
         "所有文案使用国际化 key"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "taskId": "T005",
@@ -74,15 +82,20 @@
       "filePath": "src/features/list/api/listApi.ts",
       "description": "基于 umi-request 封装 getList(params: ListQueryParams) => Promise<ListResponse>，端点定义在常量中，不硬编码 URL",
       "props": {},
-      "dependencies": ["T003", "T004"],
-      "reuseComponents": ["@umijs/plugin-request"],
+      "dependencies": [
+        "T003",
+        "T004"
+      ],
+      "reuseComponents": [
+        "@umijs/plugin-request"
+      ],
       "acceptanceCriteria": [
         "使用 umi-request 而非 axios",
         "API 端点通过常量引入",
         "请求参数和返回值都有类型约束",
         "错误由全局 errorHandler 处理"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "taskId": "T006",
@@ -91,14 +104,18 @@
       "filePath": "mock/list.ts",
       "description": "提供 GET /api/list 的 mock 数据，支持 keyword 模糊过滤、status 精确过滤、分页参数，返回符合 ListResponse 类型的数据",
       "props": {},
-      "dependencies": ["T003"],
-      "reuseComponents": ["Umi 内置 mock"],
+      "dependencies": [
+        "T003"
+      ],
+      "reuseComponents": [
+        "Umi 内置 mock"
+      ],
       "acceptanceCriteria": [
         "keyword 过滤生效",
         "分页逻辑正确（total/截取）",
         "空搜索结果返回空数组 + total: 0"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "taskId": "T007",
@@ -118,7 +135,9 @@
           "onReset": "() => void"
         }
       },
-      "dependencies": ["T005"],
+      "dependencies": [
+        "T005"
+      ],
       "reuseComponents": [],
       "acceptanceCriteria": [
         "loading 在请求期间为 true",
@@ -126,7 +145,7 @@
         "搜索时自动重置到第 1 页",
         "分页切换保留当前筛选条件"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "taskId": "T008",
@@ -141,8 +160,17 @@
           "loading": "boolean"
         }
       },
-      "dependencies": ["T003", "T004"],
-      "reuseComponents": ["antd Form", "antd Input", "antd Select", "antd Button", "antd Row/Col"],
+      "dependencies": [
+        "T003",
+        "T004"
+      ],
+      "reuseComponents": [
+        "antd Form",
+        "antd Input",
+        "antd Select",
+        "antd Button",
+        "antd Row/Col"
+      ],
       "acceptanceCriteria": [
         "表单项使用 antd Form 验证",
         "下拉选项从 STATUS_OPTIONS 常量读取",
@@ -150,7 +178,7 @@
         "查询按钮 loading 态与父组件同步",
         "文案通过国际化引入"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "taskId": "T009",
@@ -168,8 +196,16 @@
           "onPageChange": "(page: number, pageSize: number) => void"
         }
       },
-      "dependencies": ["T003", "T004"],
-      "reuseComponents": ["antd Table", "antd Empty", "antd Tag", "antd Skeleton"],
+      "dependencies": [
+        "T003",
+        "T004"
+      ],
+      "reuseComponents": [
+        "antd Table",
+        "antd Empty",
+        "antd Tag",
+        "antd Skeleton"
+      ],
       "acceptanceCriteria": [
         "分页器显示总条数、当前页",
         "loading 时展示 Skeleton 或 Spin",
@@ -177,7 +213,7 @@
         "列配置从常量读取，不硬编码",
         "每行有唯一 rowKey"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "taskId": "T010",
@@ -186,8 +222,17 @@
       "filePath": "src/pages/list/index.tsx",
       "description": "页面组件：组合 SearchForm + DataTable，通过 useListData hook 获取数据和操作方法，处理错误状态展示（antd Result）。页面只负责组合渲染，不包含业务逻辑。",
       "props": {},
-      "dependencies": ["T007", "T008", "T009"],
-      "reuseComponents": ["antd Card", "antd Result", "SearchForm", "DataTable"],
+      "dependencies": [
+        "T007",
+        "T008",
+        "T009"
+      ],
+      "reuseComponents": [
+        "antd Card",
+        "antd Result",
+        "SearchForm",
+        "DataTable"
+      ],
       "acceptanceCriteria": [
         "页面正常渲染查询表单和表格",
         "查询 → 表格数据刷新 → 分页重置到第 1 页",
@@ -197,7 +242,7 @@
         "空数据 → 展示 Empty 空状态",
         "加载中 → 展示 loading 效果"
       ],
-      "status": "pending"
+      "status": "done"
     }
   ],
   "routeConfig": {
