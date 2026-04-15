@@ -189,14 +189,14 @@ claude
 ```
 api-spec/
 ├── README.md       ← 协作流程 (必读)
-└── openapi.yaml    ← 后端提供的 OpenAPI 3.x 文件
+└── openapi.json    ← 后端提供的 OpenAPI 3.x 文件
 src/types/api.ts    ← 自动生成的 TS 类型 (不要手改)
 ```
 
 #### 工作流
 
 ```bash
-# 1. 后端发新版 → 前端拉取最新 openapi.yaml 替换到 api-spec/
+# 1. 后端发新版 → 前端拉取最新 openapi.json 替换到 api-spec/
 # 2. 重新生成类型
 pnpm gen:api
 
@@ -204,14 +204,14 @@ pnpm gen:api
 pnpm dev   # 或 pnpm lint
 
 # 4. 修代码 + mock + 测试 → 全绿后提交
-git add api-spec/openapi.yaml src/types/api.ts <受影响文件>
+git add api-spec/openapi.json src/types/api.ts <受影响文件>
 ```
 
 #### 强制规则
 
 - ❌ 不要手写 request/response 类型, 一律 `import type { paths } from '@/types/api'`
 - ❌ 不要手改 `src/types/api.ts` (会被 gen:api 覆盖)
-- ❌ 不要手改 `api-spec/openapi.yaml` 字段 (推后端改)
+- ❌ 不要手改 `api-spec/openapi.json` 字段 (推后端改)
 - ✅ Mock 数据/测试断言用生成的类型标注, 让 TS 编译保证一致性
 - ✅ 字段缺失或不对 → 推后端更新 OpenAPI, 不要前端绕过
 

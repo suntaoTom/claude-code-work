@@ -55,7 +55,7 @@
 
 ### 数据契约 (引用 OpenAPI)
 
-> **字段细节以 OpenAPI 为准** (见 `api-spec/openapi.yaml`), 本章节只写**业务相关信息**: 调用哪些接口、错误码如何映射到业务行为、mock 数据约定。
+> **字段细节以 OpenAPI 为准** (见 `api-spec/openapi.json`), 本章节只写**业务相关信息**: 调用哪些接口、错误码如何映射到业务行为、mock 数据约定。
 > 字段类型在 OpenAPI 一处定义, 前端通过 `pnpm gen:api` 自动生成 `src/types/api.ts`, 不在 PRD 重复维护。
 
 #### 调用的接口
@@ -65,7 +65,7 @@
 | 搜索用户 | `searchUsers` | GET | `/api/users/search` |
 | 查看详情 | `getUserById` | GET | `/api/users/{id}` |
 
-> 字段定义、参数约束、响应结构 → 看 `api-spec/openapi.yaml` 中的对应 operationId。
+> 字段定义、参数约束、响应结构 → 看 `api-spec/openapi.json` 中的对应 operationId。
 
 #### 错误码映射 (业务侧定义)
 
@@ -86,7 +86,7 @@
   type SearchResp = paths['/api/users/search']['get']['responses']['200']['content']['application/json'];
   ```
 - 联调时通过 `config/proxy.ts` 切换到真实后端
-- 任何字段变更不要手改 mock, 先推后端更新 OpenAPI, 拉取新 yaml 后让 TS 编译告诉你哪里要改
+- 任何字段变更不要手改 mock, 先推后端更新 OpenAPI, 拉取新 json 后让 TS 编译告诉你哪里要改
 
 ### 交互流程
 

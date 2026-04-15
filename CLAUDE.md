@@ -83,7 +83,7 @@ UmiJS 4 + React 18 + TypeScript 5 + Ant Design 5 (@umijs/max)
 
 - API 类型**必须**从 `@/types/api` 导入, **禁止**手写 request/response 类型
 - `src/types/api.ts` 是 `pnpm gen:api` 生成的产物, 不要手改
-- OpenAPI 字段不对要推后端改 `api-spec/openapi.yaml`, 不要前端绕过
+- OpenAPI 字段不对要推后端改 `api-spec/openapi.json`, 不要前端绕过
 
 ### 任务清单使用方式
 

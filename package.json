@@ -8,7 +8,7 @@
     "prepare": "max setup",
     "lint": "max lint",
     "test": "vitest",
-    "gen:api": "openapi-typescript api-spec/openapi.yaml -o src/types/api.ts"
+    "gen:api": "openapi-typescript api-spec/openapi.json -o src/types/api.ts"
   },
   "dependencies": {
     "@umijs/max": "^4.4.0",
