@@ -60,12 +60,49 @@
 
 #### 调用的接口
 
-| 业务操作 | OpenAPI operationId | 方法 | 路径 |
-|---------|---------------------|------|------|
-| 搜索用户 | `searchUsers` | GET | `/api/users/search` |
-| 查看详情 | `getUserById` | GET | `/api/users/{id}` |
+| 业务操作 | operationId | 方法 | 路径 | 状态 |
+|---------|-------------|------|------|------|
+| 搜索用户 | `searchUsers` | GET | `/api/users/search` | ✅ 已存在 |
+| 查看详情 | `getUserById` | GET | `/api/users/{id}` | ✅ 已存在 |
+| 导出 Excel | `exportUsers` | POST | `/api/users/export` | 🆕 待后端实现 (见下方接口提议) |
 
-> 字段定义、参数约束、响应结构 → 看 `api-spec/openapi.json` 中的对应 operationId。
+> **状态字段**:
+> - ✅ 已存在: `api-spec/openapi.json` 里已定义, 直接用
+> - 🆕 待后端实现: 前端基于 PRD 写了 stub 提议, 评审后进 `openapi.local.json` 先开发, 后端实现后移除
+
+> 字段定义、参数约束、响应结构 → 看 `api-spec/openapi.json` (或 `openapi.local.json`) 中的对应 operationId。
+
+#### 接口提议 (仅当有 🆕 接口时填写)
+
+> 前端先写一份 OpenAPI stub, 经前后端评审后:
+> - 放入 `api-spec/openapi.local.json` 本地开发 (紧急兜底)
+> - 或直接由后端合并到主 `openapi.json` (推荐, 双方从此共用同一份)
+
+```yaml
+# 示例: 导出用户列表接口
+paths:
+  /api/users/export:
+    post:
+      operationId: exportUsers
+      summary: 导出符合筛选条件的用户为 Excel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: { type: string }
+                status: { type: string, enum: [enabled, disabled] }
+      responses:
+        '200':
+          description: Excel 文件流
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+```
+
+> ⚠️ 评审通过后记得把状态从 🆕 改为 ✅, 避免前端以为还要等后端。
 
 #### 错误码映射 (业务侧定义)
 

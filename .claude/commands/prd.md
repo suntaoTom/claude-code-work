@@ -27,6 +27,12 @@
 5. **依赖关系**: 跟现有模块有什么交互? (登录后跳转哪? 用谁的 token 体系?)
 6. **后端接口**: 是否已有后端 API? 接口路径/字段/错误码是什么? 没有的话需要前端先 mock 吗?
 
+   **生成 PRD 时同步检查 OpenAPI**:
+   - 读 `api-spec/openapi.json`, 扫描 `operationId` 列表
+   - 根据用户描述的功能, 主动推荐可复用的 operationId (「搜索用户」功能可能对应 `searchUsers`)
+   - 对用户要的、OpenAPI 里没有的功能 → 标 🆕, 自动生成 OpenAPI stub 片段放入 PRD「接口提议」章节
+   - 生成的 stub 基于 PRD 需求推断字段, 评审前是「提议稿」, 评审后再进 `openapi.local.json` 或主文件
+
 **示例对话**:
 ```
 用户: /prd 我要做一个登录功能
