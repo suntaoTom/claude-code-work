@@ -397,4 +397,4 @@ docs/prds/x.md       docs/tasks/x.json    workspace/src/..    workspace/tests/..
 | 禁止硬编码 | [../.claude/rules/no-hardcode.md](../.claude/rules/no-hardcode.md) |
 | 编码风格 | [../.claude/rules/coding-style.md](../.claude/rules/coding-style.md) |
 | 技术栈 | [../.claude/rules/tech-stack.md](../.claude/rules/tech-stack.md) |
-| 全部命令 | [../.claude/commands/](../.claude/commands/) — `/prd` `/prd-check` `/plan` `/plan-check` `/code` `/test` `/review` `/start` |
+| 全部命令 | [../.claude/commands/](../.claude/commands/) — `/prd` `/prd-check` `/plan` `/plan-check` `/code` `/test` `/review` `/fix` `/start` |
