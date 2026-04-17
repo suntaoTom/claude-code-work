@@ -7,13 +7,19 @@
 ```
 docs/
 ├── README.md              ← 你正在看的这个文件
-├── tasks/                 ← AI 架构师生成的任务清单
+├── WORKFLOW.md            ← 五步法工作流手册
+├── tasks/                 ← /plan 生成的任务清单
 │   ├── tasks-user-module-2026-03-30.json
-│   ├── tasks-order-module-2026-04-01.json
 │   └── ...
-└── prds/                  ← 产品需求文档 (可选)
-    ├── prd-user-module.md
-    └── ...
+├── prds/                  ← /prd 生成的产品需求文档
+│   ├── _template.md
+│   ├── REVIEW.md          ← PRD 人工审阅指南
+│   └── login.md
+└── bug-reports/           ← 测试端 AI 测试报告 (喂给 /fix 批量修)
+    ├── _template.md
+    ├── README.md          ← 测试端 AI 的 prompt 片段 + 对接说明
+    ├── 2026-04-16-login.md
+    └── screenshots/
 ```
 
 ## tasks/ 目录

@@ -58,11 +58,11 @@ UmiJS 4 + React 18 + TypeScript 5 + Ant Design 5 (@umijs/max)
 每次创建/修改代码文件时，必须同步维护：
 
 1. 所在目录的 `README.md`（文件清单表格）
-2. 文件顶部 JSDoc 注释（@description / @module / @dependencies / **@prd / @task / @rules**）
+2. 文件顶部 JSDoc 注释（@description / @module / @dependencies / **@prd / @task / @design / @rules**）
 3. 功能模块的模块级 `README.md`（业务流程 + 对外暴露）
 4. `workspace/src/README.md` 全局索引
 
-> **业务锚点 (@prd / @task / @rules) 是「需求 → 代码 → 测试」可追溯链的关键**, 让 `/test` 能根据业务规则而非源码行为生成测试, 避免 AI 自己猜预期。详见 `.claude/rules/file-docs.md`。
+> **业务锚点 (@prd / @task / @design / @rules) 是「需求 → 设计 → 代码 → 测试」可追溯链的关键**, 让 `/test` 能根据业务规则而非源码行为生成测试, `/review` 能对照设计稿检查视觉一致性。详见 `.claude/rules/file-docs.md`。
 
 详细格式与模板 → `.claude/rules/file-docs.md`
 

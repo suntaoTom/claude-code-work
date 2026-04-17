@@ -3,6 +3,7 @@
  * @module locales
  */
 import list from './en-US/list';
+import auth from './en-US/auth';
 
 export default {
   'common.submit': 'Submit',
@@ -23,4 +24,5 @@ export default {
   'common.status': 'Status',
   'common.status.all': 'All',
   ...list,
+  ...auth,
 };

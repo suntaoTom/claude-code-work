@@ -98,6 +98,7 @@ page       (页面装配)              ← 来源: PRD 交互流程
       "filePath": "workspace/src/features/xxx/xxx.ts",
       "description": "具体实现要求",
       "prdRef": "docs/prds/user-list.md#搜索表单",
+      "designRef": "Figma: <URL>#Frame-SearchForm 或 docs/designs/search-form.png 或空",
       "businessRules": [
         "手机号格式不合法时, 表单实时显示错误提示, 搜索按钮禁用",
         "所有字段为空时, 搜索按钮禁用",
@@ -124,7 +125,8 @@ page       (页面装配)              ← 来源: PRD 交互流程
 |------|------|------|------|
 | `prdRef` (顶层) | ✅ | 输入的 PRD 路径 | 整个模块的 PRD 入口 |
 | `task.prdRef` | ✅ | PRD 二级标题锚点 | 编码时写入源文件 `@prd` JSDoc |
-| `task.businessRules` | ✅ | PRD「业务规则」章节原文 | 编码时写入源文件 `@rules` JSDoc, **必须照抄不要改述** |
+| `task.designRef` | ❌ | PRD「设计稿」章节的帧映射 | 编码时写入源文件 `@design` JSDoc, 无设计稿留空 |
+| `task.businessRules` | ✅ | PRD「业务规则」���节原文 | 编码时���入源文件 `@rules` JSDoc, **必须照抄不要改��** |
 | `task.acceptanceCriteria` | ✅ | businessRules 的具体化 (含技术细节) | 编码完成自检, 可包含 UI/性能/兼容性等技术要求 |
 
 **businessRules vs acceptanceCriteria 的区别**:

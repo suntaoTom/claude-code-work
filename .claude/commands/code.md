@@ -18,6 +18,35 @@
 2. **openapi.json 类型已生成** — 检查 `workspace/src/types/api.ts` 存在; 不存在先跑 `pnpm gen:api`
 3. **无未处理 blocked 任务** — 如果 tasks[] 里有 `status: "blocked"` 的任务 (如「推动后端更新 OpenAPI: ...」), 停下列出, 要求用户决定是否跳过
 
+## 第零点五步: 断点恢复 (处理上次中断的状态)
+
+扫一遍 tasks.json 的 status 分布, 按以下规则决定起点:
+
+| 状态 | 动作 |
+|------|------|
+| `done` | 自动跳过, 不重做 |
+| `pending` | 按依赖顺序, 从第一个「上游全 done」的 pending 任务开始 |
+| `in-progress` | **停下问用户** (见下) |
+
+### 遇到 `in-progress` 任务时
+
+说明上次会话在这个任务里中断了, 文件状态未知, 直接续写有风险 (可能已部分写入、可能只改了 status 还没动代码)。不要自行判断, 先给用户列出现状:
+
+1. 读 `task.filePath`, 确认文件是否已存在
+2. 若存在, 读文件头 JSDoc 看 `@rules` 是否覆盖了本任务 `businessRules` 全部条目
+3. 简报一句: 「T00X 文件 [已存在/不存在], JSDoc [完整/缺 N 条规则/无]」
+4. 给用户 4 个选项, 等待选择:
+   - **(A) 继续补全** — 文件已部分写入, 基于现状补完剩余逻辑, 不推翻已有代码
+   - **(B) 删除重做** — 已有代码偏离规则或质量差, 删文件从头写
+   - **(C) 标记为 done** — 实际已写完, 只是上次没来得及改状态, 直接置 done 跳过
+   - **(D) 回退为 pending** — 之前没真正动代码, 改回 pending 按正常流程重跑
+
+多个 `in-progress` 时逐个询问, 不要一次性批处理 (每个文件状态可能不同)。
+
+### 带 `--from` / `--only` 参数时
+
+跳过本步, 按参数直接定位起点 (用户已明确指定了断点, 不必再询问)。
+
 ## 执行原则
 
 ### 按依赖顺序, 不跳步
@@ -43,10 +72,11 @@ pending → in-progress → done
 1. **读 prdRef 原文** — 按 `task.prdRef` (如 `docs/prds/login.md#账号密码登录`) 定位到 PRD 二级标题下全部内容, 理解业务上下文
 2. **确认文件路径** — `task.filePath`, 目录不存在则创建
 3. **写代码**, 必须遵守:
-   - **文件头 JSDoc** 包含 `@description` / `@module` / `@dependencies` / `@prd` / `@task` / `@rules` (参考 `.claude/rules/file-docs.md`)
+   - **文件头 JSDoc** 包含 `@description` / `@module` / `@dependencies` / `@prd` / `@task` / `@rules` / `@design` (参考 `.claude/rules/file-docs.md`)
    - **`@prd` 字段**: 直接用 `task.prdRef` 原值
    - **`@task` 字段**: `docs/tasks/<文件名>.json#<taskId>`
    - **`@rules` 字段**: 把 `task.businessRules` 每条按顺序列进去, **原文照抄, 不要改述**
+   - **`@design` 字段**: 直接用 `task.designRef` 原值 (Figma 链接 / 本地文件路径), 无设计稿则省略
    - **API 类型**: `import type { paths } from '@/types/api'`, **不得手写** request/response 类型
    - **禁止硬编码**: 文案走 i18n, 颜色/尺寸走 theme token, 枚举走常量 (参考 `.claude/rules/no-hardcode.md`)
    - **组件**: 函数式 + Props interface 导出 + 业务逻辑抽 hooks

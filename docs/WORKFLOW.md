@@ -91,12 +91,14 @@ git commit → 完工
 ```
 
 **AI 会做**:
-- 反问 3-5 个关键问题 (登录方式? 安全策略? 后端接口?)
+- 反问 3-5 个关键问题 (登录方式? 安全策略? 后端接口? **设计稿?**)
 - 扫 `workspace/api-spec/openapi.json` 推荐可复用接口, 缺的生成 stub
+- 如果有设计稿 (Figma 链接 / 本地文件 / MCP), 生成「功能点与设计帧映射」表
 - 生成草稿到 `docs/prds/<模块名>.md`, 含 `[待确认]` 标注
 
 **你要做**:
 - 打开生成的 PRD 人工审 — **详细方法看 [prds/REVIEW.md](./prds/REVIEW.md)**
+- 确认「设计稿」章节链接正确 (有 Figma 链接的话点一下能打开)
 - 改一点跑一下 `/prd-check @docs/prds/xxx.md` 实时自检, 看还差哪些没改完
 - `[待确认]` 必须清零才能跑 `/plan`
 
@@ -160,6 +162,25 @@ git commit → 完工
 - ❓ 字段不对 → 检查 workspace/api-spec/openapi.json 是不是最新的
 - ❓ AI 报 PRD 已变更 → 回 Step 1/2 修 PRD 重跑 `/plan`
 
+#### 中断后再开一个 agent 会怎样 (断点恢复)
+
+`/code` 的断点记忆**全在 tasks.json 的 `status` 字段**, 没有隐藏缓存。下次打开新 agent 重跑 `/code @docs/tasks/xxx.json`, 它会这样处理:
+
+| 状态 | 行为 |
+|------|------|
+| `done` | 自动跳过, 不重做 |
+| `pending` | 按 `dependencies` 顺序续跑 |
+| `in-progress` | **停下问你** (上次会话在这个任务中断, 文件状态未知) |
+
+遇到 `in-progress` 时 AI 会先读 `task.filePath` + JSDoc, 判断文件是否存在、`@rules` 是否已覆盖本任务 `businessRules`, 然后给你 4 个选项:
+
+- **A. 继续补全** — 文件已部分写入, 基于现状补完
+- **B. 删除重做** — 已有代码偏离规则, 删文件从头写
+- **C. 标记为 done** — 其实写完了, 上次没来得及改状态
+- **D. 回退为 pending** — 没真正动代码, 走正常流程重跑
+
+> ⚠️ 别手动改 `status`, 让 AI 读完现状再决定。如果你已经知道断点在哪, 用 `--from T005` 直接跳过本流程。
+
 ---
 
 ### Step 4 — 生成测试
@@ -200,6 +221,70 @@ git commit → 完工
 ```bash
 git commit -m "feat(login): 实现登录功能"
 ```
+
+---
+
+## 🐛 发现 bug 时怎么办
+
+### 三种 bug 来源, 都经 `/bug-check` 分诊后走 `/fix`
+
+| 来源 | 命令 | `/bug-check` 的作用 |
+|------|------|---------------------|
+| 本地开发时发现 | `/fix <描述>` | 分诊 (真 bug / feature / 漏规则) + 反问补齐 → 固化报告 → 停下让你 review |
+| `/review` 报出的问题 | `/fix @docs/review-reports/xxx.md --pr` | 校验格式 + 分诊 |
+| **测试端 AI 测试** | `/fix @docs/bug-reports/xxx.md --pr` | 校验格式 + 分诊 |
+
+> **核心逻辑**: 「代码没实现 PRD 有的规则」= bug → `/fix`; 「PRD 里没这个规则」= 漏规则 → `/prd` 补规则。`/bug-check` 负责做这个分流。
+
+**独立自检**: 不一定非要跑 `/fix`, 随时可以单独跑 `/bug-check @docs/bug-reports/xxx.md` 验格式、看分诊结果。
+
+### 测试端 AI 测试对接 (重点)
+
+测试端 AI 和 `/fix` 之间的桥是 **`docs/bug-reports/<日期>-<模块>.md`** (格式见 [bug-reports/_template.md](./bug-reports/_template.md))。
+
+**给测试端 AI 的 system prompt** 见 [bug-reports/README.md](./bug-reports/README.md), 原样拷贝, 它就会按模板写报告, 不会自己去改代码。
+
+**对接流程**:
+
+```
+你让测试端 AI 测 /login
+    ↓
+测试端 AI 写 docs/bug-reports/2026-04-16-login.md (3 个 bug)
+    ↓
+(可选) /bug-check @docs/bug-reports/2026-04-16-login.md  ← 自检格式 + 分诊
+    ↓
+你 review 一眼 (3-5 min, 剔除误报)
+    ↓
+/fix @docs/bug-reports/2026-04-16-login.md --pr
+    ↓
+/fix 内嵌 /bug-check 校验 → 按优先级 + 模块分组 → 产出 1~N 个 draft PR
+    ↓
+你审 PR → merge
+```
+
+### 口头报 bug 的流程
+
+```
+/fix 登录页白屏
+    ↓
+/fix 内嵌 /bug-check → 分诊 + 反问补齐 → 固化到 docs/bug-reports/<日期>-<模块>.md → 停下
+    ↓
+你 review 报告 (确认推测、修正细节)
+    ↓
+/fix @docs/bug-reports/<日期>-<模块>.md [--pr]
+    ↓
+正常修复流程
+```
+
+> 口头 bug 也会落盘成报告文件, 和测试端 AI 产出的一视同仁, 追溯统一。
+
+### 完全自动闭环 (未来可选)
+
+`.github/workflows/claude-fix.yml` 已写好, 启用后:
+- 在 GitHub issue 里评论 `@claude fix` → workflow 自动触发 `/fix --pr --headless`
+- 启用步骤见 [.github/README.md](../.github/README.md)
+
+**未启用时命令本地跑就行**, 和启用后用的是同一份 `/fix.md`。
 
 ---
 
@@ -330,6 +415,10 @@ git add workspace/api-spec/openapi.json workspace/src/types/api.ts <受影响的
 | TS 报 `@/types/api` 找不到 | `pnpm gen:api` |
 | 改了 PRD 要重拆任务 | `/plan @docs/prds/xxx.md` (覆盖旧 tasks.json) |
 | 改了源码要更新测试 | `/test <文件>` (自动识别哪些过期) |
+| 本地发现某个 bug 想让 AI 修 | `/fix <描述>` → `/bug-check` 分诊+固化 → review → `/fix @<报告>` |
+| 测试端 AI 测出来一堆 bug | 先 `/bug-check @<报告>` 自检, 再 `/fix @<报告> --pr` |
+| 不确定是 bug 还是缺需求 | `/bug-check <描述>` — 分诊结果告诉你走 `/fix` 还是 `/prd` |
+| 想要 issue 评论触发自动修 | 启用 `.github/workflows/claude-fix.yml` (见 `.github/README.md`) |
 | 只补缺失的测试 | `/test <目录> --only-missing` |
 | 强制重新生成全部测试 | `/test <目录> --force` |
 | 加新需求到现有模块 | PRD 加新 `## 二级标题`, 再跑 `/plan` |
@@ -392,9 +481,12 @@ docs/prds/x.md       docs/tasks/x.json    workspace/src/..    workspace/tests/..
 | 整体规范 | [../CLAUDE.md](../CLAUDE.md) |
 | PRD 怎么写 | [prds/_template.md](prds/_template.md) |
 | PRD 怎么审 | [prds/REVIEW.md](prds/REVIEW.md) |
+| 测试端 AI 测试对接 | [bug-reports/README.md](bug-reports/README.md) |
+| Bug 报告模板 | [bug-reports/_template.md](bug-reports/_template.md) |
+| GitHub 自动化 (可选启用) | [../.github/README.md](../.github/README.md) |
 | OpenAPI 协作 | [../workspace/api-spec/README.md](../workspace/api-spec/README.md) |
 | 代码注释规范 | [../.claude/rules/file-docs.md](../.claude/rules/file-docs.md) |
 | 禁止硬编码 | [../.claude/rules/no-hardcode.md](../.claude/rules/no-hardcode.md) |
 | 编码风格 | [../.claude/rules/coding-style.md](../.claude/rules/coding-style.md) |
 | 技术栈 | [../.claude/rules/tech-stack.md](../.claude/rules/tech-stack.md) |
-| 全部命令 | [../.claude/commands/](../.claude/commands/) — `/prd` `/prd-check` `/plan` `/plan-check` `/code` `/test` `/review` `/fix` `/start` |
+| 全部命令 | [../.claude/commands/](../.claude/commands/) — `/prd` `/prd-check` `/plan` `/plan-check` `/code` `/test` `/review` `/bug-check` `/fix` `/start` |

@@ -3,6 +3,7 @@
  * @module locales
  */
 import list from './zh-CN/list';
+import auth from './zh-CN/auth';
 
 export default {
   'common.submit': '提交',
@@ -23,4 +24,5 @@ export default {
   'common.status': '状态',
   'common.status.all': '全部',
   ...list,
+  ...auth,
 };
