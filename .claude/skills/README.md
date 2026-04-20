@@ -7,10 +7,16 @@
 
 | 技能 | 用途 | 触发场景 |
 |------|------|---------|
+| [prd-import/](prd-import/) | 非 md 需求格式转换 (.docx/.xlsx/.pptx → md) | 产品给了 Word/Excel/PPT 需求, 作为 `/prd` 的入口 |
 | [ext-dep-audit/](ext-dep-audit/) | 依赖安全与健康度审计 | 依赖巡检 / 安全扫描 |
 | [ext-perf-audit/](ext-perf-audit/) | 前端性能审计 | 页面卡顿分析 / 发版前优化 |
 | [ext-a11y-check/](ext-a11y-check/) | 无障碍 WCAG 2.1 AA 合规检查 | 合规审计 / 键盘操作支持 |
 | [ext-changelog/](ext-changelog/) | 按模块聚合的变更影响报告 | 周报 / 交接 / 复盘 |
+
+## 命名约定
+
+- `ext-*` 前缀 = **扩展可选技能**, 按需使用, 非主流程
+- 无前缀 = **主流程配套技能**, 支撑八步法某个环节 (如 `prd-import` 支撑 `/prd` 的入口)
 
 ## 目录结构约定
 

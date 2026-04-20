@@ -105,6 +105,31 @@ git commit
 
 ### Step 1 — 需求变 PRD
 
+#### 如果需求是非 markdown 格式 (Word / Excel / PPT)
+
+先用 `prd-import` skill 转成 markdown, 再跑 `/prd`:
+
+```bash
+# 产品给了 Word 文档
+pnpm prd:import requirements/登录需求.docx
+# → docs/prds/_imports/登录需求-2026-04-20.md
+
+# 然后把转出来的 md 当输入
+/prd @docs/prds/_imports/登录需求-2026-04-20.md
+```
+
+| 输入类型 | 处理方式 |
+|---------|---------|
+| 文字 / `.md` / `.txt` | 直接跑 `/prd` |
+| **`.docx` / `.xlsx` / `.pptx`** | **先跑 `pnpm prd:import`, 再跑 `/prd @<转换产物>`** |
+| `.pdf` | 直接 `/prd @<file>.pdf` (Claude Code 原生支持) |
+| 图片 (`.png` / `.jpg`) | 直接 `/prd @<file>.png` (多模态识别) |
+| `.doc` / `.xls` / `.ppt` (老格式) | 用 Word/WPS 另存为新格式 (`.docx` 等) 后再走转换 |
+
+首次使用 `prd:import` 前需装依赖一次: `cd workspace && pnpm install` (自动装 mammoth + xlsx)。详细说明见 [.claude/skills/prd-import/SKILL.md](../.claude/skills/prd-import/SKILL.md)。
+
+#### 直接用文字 / 已有 md 时
+
 ```bash
 /prd 我要做一个用户登录功能
 ```
@@ -568,6 +593,7 @@ git add workspace/api-spec/openapi.json workspace/src/types/api.ts <受影响的
 | 加新需求到现有模块 | PRD 加新 `## 二级标题`, 再跑 `/plan` |
 | 修 bug, 不算新需求 | 直接跟 AI 说, 不走完整流程 |
 | 不知道项目里有哪些命令 | 输入 `/` 看自动补全 |
+| 产品给了 Word/Excel/PPT 需求 | `pnpm prd:import <file>` 转 md, 再跑 `/prd @<产物>` |
 | 页面感觉卡顿想查性能 | `/ext-perf-audit workspace/src/features/xxx/` |
 | 合规/无障碍专项检查 | `/ext-a11y-check workspace/src/features/xxx/` |
 | 依赖安全巡检 | `/ext-dep-audit` |

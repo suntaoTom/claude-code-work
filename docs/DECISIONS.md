@@ -31,6 +31,31 @@
 
 ---
 
+## 2026-04-20: 非 md 需求格式入口抽为 prd-import skill
+
+**背景**: `/prd` 命令只接受文字 / markdown / PDF / 图片 (Claude Code 原生支持), 但实际产品/后端常塞 `.docx / .xlsx / .pptx`, 这些是二进制 zip+XML, Claude 读不了。用户要么手动粘贴 (长文档粘不完)、要么自己另存为 PDF (格式丢失)。整个 `/prd` 主流程的入口被卡死。
+
+**决策**: 新增 `.claude/skills/prd-import/` skill 包 + `workspace/scripts/prd-import.mjs` 脚本, 负责 Word/Excel/PPT → markdown 转换。产物落盘到 `docs/prds/_imports/<basename>-<日期>.md`, 然后跑 `/prd @<产物>` 走正常澄清流程。`/prd` 本身不动。
+
+**理由**:
+- **分层清晰** — 格式转换是确定性脚本任务 (有数据输入, 有标准输出), 放 skills/ 合适; `/prd` 是纯思考, 留 commands/
+- **产物可追溯** — 转换结果保留在 `_imports/`, 评审 PRD 时能对照原文, 不是一次性黑盒
+- **依赖最小** — 用 `mammoth` (docx) + `xlsx` (excel) 两个 npm 包, 装在 workspace/ 里复用现有 node_modules; PPTX 用 Node 原生 unzip + 正则, 不加依赖
+- **不破坏既有接口** — `/prd` 的调用方式不变, 只是多了一种预处理路径; 用户输入 md/文字/PDF/图片时零成本
+
+**替代方案 (放弃)**:
+- **扩展 `/prd` 自动识别并转换** — 把脚本调用塞进 `/prd` 的 prompt, 体验最顺但违反 skill/command 边界 (commands 是纯 prompt, 不该依赖外部脚本)
+- **依赖系统 pandoc** — 不是所有用户环境都装, 硬依赖增加首次使用摩擦; npm 包装在 workspace 里随 `pnpm install` 自动搞定
+- **让用户手动粘贴或另存 PDF** — 可行但用户体验差, 复杂表格和长文档会丢内容
+
+**命名选择**: 不加 `ext-` 前缀。`ext-*` 语义是"可选扩展" (性能审计 / a11y 等, 不跑也能开发); `prd-import` 是**主流程入口的必要补充** (没它, doc 类需求进不来 `/prd`), 所以归为"无前缀 = 主流程配套技能"。
+
+**影响**:
+- 新增: `.claude/skills/prd-import/{SKILL.md, references/formats.md}`, `workspace/scripts/prd-import.mjs`, `docs/prds/_imports/{.gitkeep, README.md}`
+- 修改: `workspace/package.json` (+mammoth, +xlsx, +prd:import 脚本), 根 `package.json` (+prd:import 代理), `.claude/skills/README.md` (登记 + 加命名约定表), `docs/WORKFLOW.md` (Step 1 加非 md 分支, 速查表加一行)
+
+---
+
 ## 2026-04-20: 测试文件位置统一到 workspace/tests/ (推翻「与源文件同目录」)
 
 **背景**: `.claude/rules/testing.md` 和 `.claude/agents/test-writer.md` 原定「与源文件同目录」, 但 `.claude/commands/test.md` 和现存代码 (`workspace/tests/features/list/`) 已经走 `workspace/tests/` 镜像 `src/` 结构。2026-04-20 meta-audit 报告 (Top 3 必修) 捕到这个冲突 — 规则跟代码分叉会导致 test-writer 生成新测试时再形成第二套布局。

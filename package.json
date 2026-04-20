@@ -8,6 +8,7 @@
     "lint": "pnpm --prefix workspace lint",
     "test": "pnpm --prefix workspace test",
     "gen:api": "pnpm --prefix workspace gen:api",
+    "prd:import": "pnpm --prefix workspace prd:import",
     "install:workspace": "cd workspace && pnpm install"
   }
 }
