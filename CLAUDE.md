@@ -58,13 +58,26 @@ UmiJS 4 + React 18 + TypeScript 5 + Ant Design 5 (@umijs/max)
 每次创建/修改代码文件时，必须同步维护：
 
 1. 所在目录的 `README.md`（文件清单表格）
-2. 文件顶部 JSDoc 注释（@description / @module / @dependencies / **@prd / @task / @rules**）
+2. 文件顶部 JSDoc 注释（@description / @module / @dependencies / **@prd / @task / @design / @rules**）
 3. 功能模块的模块级 `README.md`（业务流程 + 对外暴露）
 4. `workspace/src/README.md` 全局索引
 
-> **业务锚点 (@prd / @task / @rules) 是「需求 → 代码 → 测试」可追溯链的关键**, 让 `/test` 能根据业务规则而非源码行为生成测试, 避免 AI 自己猜预期。详见 `.claude/rules/file-docs.md`。
+> **业务锚点 (@prd / @task / @design / @rules) 是「需求 → 设计 → 代码 → 测试」可追溯链的关键**, 让 `/test` 能根据业务规则而非源码行为生成测试, `/review` 能对照设计稿检查视觉一致性。详见 `.claude/rules/file-docs.md`。
 
 详细格式与模板 → `.claude/rules/file-docs.md`
+
+---
+
+## 测试规范概要
+
+- 测试断言的**唯一来源**是源文件 JSDoc 的 `@rules`, 不是 AI 推测
+- 每条 `@rules` 一个 `it()`, `it` 名字完整引用规则原文
+- 断言查询优先级: `getByRole` > `getByLabelText` > `getByText` > `getByTestId`
+- Mock 策略: HTTP 用 MSW, 项目内部模块不 mock, 不断言 mock 调用次数
+- 位置: 单元/组件测试与源文件同目录 (`<name>.test.tsx`), E2E 放 `workspace/tests/e2e/`
+- 测试失败分诊顺序: 测试代码 → 环境 → 测试预期 → 源码 (源码是最后才怀疑的)
+
+完整测试规范 → `.claude/rules/testing.md`
 
 ---
 
@@ -86,7 +99,7 @@ UmiJS 4 + React 18 + TypeScript 5 + Ant Design 5 (@umijs/max)
 
 ### docs/ 目录结构
 
-- docs/WORKFLOW.md — **新人/用户必读**, 从一句话需求到上线的五步法操作手册
+- docs/WORKFLOW.md — **新人/用户必读**, 从一句话需求到上线的八步法操作手册
 - docs/tasks/ — 存放 /plan 命令生成的 JSON 任务清单, 每个文件对应一个功能模块
 - docs/prds/ — 存放产品需求文档 (.md 格式), 模板见 docs/prds/_template.md
 - workspace/api-spec/ — OpenAPI 契约文件 (后端提供), 通过 `pnpm gen:api` 生成 workspace/src/types/api.ts

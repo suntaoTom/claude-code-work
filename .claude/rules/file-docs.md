@@ -68,6 +68,7 @@
  * @dependencies useUserData, useAuthStore, Avatar (antd)
  * @prd docs/prds/user-module.md#用户资料
  * @task docs/tasks/tasks-user.json#task-012
+ * @design Figma: https://figma.com/file/xxx#Frame-UserProfile 或 docs/designs/user-profile.png
  * @rules
  *   - 非登录用户只能看公开字段 (昵称、头像)
  *   - 编辑模式下, 手机号需通过 PHONE_REG 校验
@@ -79,7 +80,7 @@
 
 对于不同类型的文件，注释需包含：
 
-- **组件**: description, module, dependencies, **prd, task, rules**, props 说明, example
+- **组件**: description, module, dependencies, **prd, task, design, rules**, props 说明, example
 - **hooks**: description, module, **prd, task, rules**, params, returns, example
 - **stores**: description, module, **prd, task, rules**, state 字段说明, actions 说明
 - **utils**: description, module, params, returns, example (纯工具函数通常无需 prd/rules)
@@ -88,12 +89,13 @@
 
 ### 业务锚点字段说明 (重要)
 
-`@prd` / `@task` / `@rules` 是「需求 → 代码 → 测试」可追溯链的关键, **编码时必须同步写入**:
+`@prd` / `@task` / `@design` / `@rules` 是「需求 → 设计 → 代码 → 测试」可追溯链的关键, **编码时必须同步写入**:
 
 | 字段 | 格式 | 作用 |
 |------|------|------|
 | `@prd` | `docs/prds/<文件>.md#<锚点>` | 指向对应的 PRD 片段, 供查阅需求原文 |
 | `@task` | `docs/tasks/<文件>.json#<taskId>` | 指向 `/plan` 生成的任务条目 |
+| `@design` | Figma URL / 本地文件路径 / 空 | 指向设计稿帧, 供对照视觉规范 (无设计稿可省略) |
 | `@rules` | 多行中文规则列表, 每行一条 | 本文件承载的**业务规则**, 是测试断言的唯一来源 |
 
 **`@rules` 的写法原则**:

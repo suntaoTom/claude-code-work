@@ -7,13 +7,23 @@
 ```
 docs/
 ├── README.md              ← 你正在看的这个文件
-├── tasks/                 ← AI 架构师生成的任务清单
+├── WORKFLOW.md            ← 八步法工作流手册
+├── DECISIONS.md           ← 架构决策记录 (ADR), 框架重大决策的背景/理由
+├── tasks/                 ← /plan 生成的任务清单
 │   ├── tasks-user-module-2026-03-30.json
-│   ├── tasks-order-module-2026-04-01.json
 │   └── ...
-└── prds/                  ← 产品需求文档 (可选)
-    ├── prd-user-module.md
-    └── ...
+├── prds/                  ← /prd 生成的产品需求文档
+│   ├── _template.md
+│   ├── REVIEW.md          ← PRD 人工审阅指南
+│   └── login.md
+├── bug-reports/           ← 测试端 AI 测试报告 (喂给 /fix 批量修)
+│   ├── _template.md
+│   ├── README.md          ← 测试端 AI 的 prompt 片段 + 对接说明
+│   ├── 2026-04-16-login.md
+│   └── screenshots/
+└── retrospectives/        ← /meta-audit 产出的只读观察报告 (不可变快照)
+    ├── README.md
+    └── 2026-04-20-meta-audit.md
 ```
 
 ## tasks/ 目录
@@ -120,3 +130,19 @@ docs/prds/user-list.md  (含 ## 搜索表单 锚点)
 1. 全局搜索 `@prd .*#<旧标题>`
 2. 同步更新源码 JSDoc
 3. 提交时在 commit message 中标注「PRD 锚点变更」
+
+## retrospectives/ 目录
+
+`/meta-audit` 命令产出的**只读观察报告**, 记录某一时刻框架的健康度快照 (规则违规 / 文档漂移 / 追溯链断裂 / 死引用等)。
+
+- **不可变**: 报告一旦生成不再修改, 下次审计基于当前状态生成新报告, 自然对比趋势
+- **不自动执行**: 所有改动需人工 review 后走正常 PR 流程固化, 不要在报告里打勾「已处理」
+- **命名**: `<YYYY-MM-DD>-meta-audit.md`
+
+详见 [retrospectives/README.md](retrospectives/README.md)。
+
+## DECISIONS.md
+
+架构决策记录 (ADR), 记录框架**重大设计决策**的背景、理由、替代方案。未来接手的 AI / 新人读这里就能快速理解「为什么这么做」, 避免误改或重走弯路。
+
+什么该记录、什么不该记录、格式模板见文件顶部。

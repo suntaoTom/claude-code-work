@@ -26,6 +26,32 @@
 |------|------|
 | 配额 | 用户每月可用的接口调用次数上限 |
 
+## 设计稿
+
+> 设计稿是视觉规范的唯一来源, 与 PRD 的业务规则互补: PRD 管「做什么」, 设计稿管「长什么样」。
+> 三种来源方式可并存, 有什么填什么, 留空不阻塞。
+
+| 项 | 值 |
+|----|----|
+| 来源类型 | link / file / mcp (可多选) |
+| Figma 链接 | `https://figma.com/file/xxx` (无则留空) |
+| 本地文件 | `docs/designs/xxx.png` 或 `docs/designs/xxx.sketch` (无则留空) |
+| MCP 配置 | figma-mcp 已接入 / 未接入 |
+
+### 功能点与设计帧映射
+
+> 每个功能点对应设计稿的哪一帧 / 哪一页, 便于 `/plan` 拆任务和 `/code` 编码时对照。
+
+| 功能点 (PRD 锚点) | 设计引用 |
+|-------------------|---------|
+| #搜索表单 | Figma: `<URL>#Frame-SearchForm` 或 `docs/designs/search-form.png` |
+| #数据列表 | Figma: `<URL>#Frame-DataTable` |
+
+> **注意**:
+> - Figma 链接优先 (永远指向最新版), 本地文件会过期
+> - MCP 接入后, `/code` 阶段可实时从 Figma 提取 Design Token, 不需手动导出
+> - 切图 / 图标等代码直接消费的资源, 导出到 `workspace/public/images/`
+
 ---
 
 ## 功能点 1: [小标题作为锚点]

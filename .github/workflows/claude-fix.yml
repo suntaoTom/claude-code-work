@@ -1,0 +1,155 @@
+# Claude Fix — 自动化 Bug 修复流程
+#
+# 触发方式:
+#   1. 在 GitHub issue 评论里写 "@claude fix <补充说明>"
+#      → 读 issue 正文作为 bug 描述, 评论的补充内容附在后面
+#   2. Actions 页面手动 "Run workflow" (workflow_dispatch)
+#      → 填 bug_description 输入框, 用于测试
+#
+# 本 workflow 只做一件事: 把外部信号翻译成 `/fix --pr --headless` 调用,
+# 具体修复流程在 .claude/commands/fix.md 里定义, 修改 /fix 逻辑不用改本文件。
+#
+# 启用前置条件 (见 .github/README.md):
+#   - Repo Settings → Secrets → 添加 ANTHROPIC_API_KEY
+#   - Repo Settings → Actions → General → Workflow permissions 勾 "Read and write"
+#   - Repo Settings → Actions → General → 勾 "Allow GitHub Actions to create pull requests"
+
+name: Claude Fix
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      bug_description:
+        description: 'Bug 描述 (可多行, 支持现象/复现步骤/报错堆栈)'
+        required: true
+        type: string
+      allow_pr:
+        description: '是否自动开 draft PR'
+        required: false
+        default: true
+        type: boolean
+
+# 同一个 issue 或手动触发同时只能跑一个, 避免并发改乱
+concurrency:
+  group: claude-fix-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    # 硬性触发条件 (三选一, 不满足直接跳过):
+    #   a) issue 评论且非 PR 评论, 且评论里含 "@claude fix", 且评论者是 repo 成员
+    #   b) 手动触发
+    if: |
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request == null &&
+       contains(github.event.comment.body, '@claude fix') &&
+       contains(fromJson('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      github.event_name == 'workflow_dispatch'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write        # 新建 fix/ 分支 + push
+      pull-requests: write   # gh pr create
+      issues: write          # 回评论到 issue
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: workspace/pnpm-lock.yaml
+
+      - name: Install deps (workspace)
+        run: pnpm --prefix workspace install --frozen-lockfile
+
+      - name: Generate API types (pnpm gen:api)
+        run: pnpm gen:api
+        continue-on-error: true  # api-spec/openapi.json 不存在时允许继续
+
+      - name: Acknowledge to issue
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🤖 Claude \`/fix\` 已启动。\n\n日志: ${runUrl}\n\n流程: 复现 → 定位 → 修复 → 验证 → (若通过) 开 draft PR`
+            });
+
+      - name: Run /fix
+        id: fix
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # 把外部信号拼成 /fix 的 $ARGUMENTS
+          prompt: |
+            /fix${{ (github.event_name == 'workflow_dispatch' && inputs.allow_pr == false) && '' || ' --pr' }} --headless
+
+            触发来源: ${{ github.event_name == 'issue_comment' && format('issue #{0}', github.event.issue.number) || 'workflow_dispatch' }}
+            触发人: @${{ github.actor }}
+
+            ${{ github.event_name == 'issue_comment' && format('## Issue 标题\n{0}\n\n## Issue 正文\n{1}\n\n## 评论补充\n{2}', github.event.issue.title, github.event.issue.body, github.event.comment.body) || inputs.bug_description }}
+          # 白名单工具 (禁止一切未列出的操作)
+          allowed_tools: |
+            Read
+            Edit
+            Write
+            Glob
+            Grep
+            Bash(pnpm *)
+            Bash(node scripts/*)
+            Bash(git status)
+            Bash(git diff:*)
+            Bash(git log:*)
+            Bash(git checkout -b fix/*)
+            Bash(git checkout fix/*)
+            Bash(git add workspace/*)
+            Bash(git add .claude/*)
+            Bash(git add docs/*)
+            Bash(git commit:*)
+            Bash(git push -u origin fix/*)
+            Bash(gh pr create:*)
+          # 禁止碰的路径 (双重保险)
+          disallowed_tools: |
+            Bash(git push -f *)
+            Bash(git push --force *)
+            Bash(git reset --hard *)
+            Bash(git checkout main*)
+            Bash(git checkout master*)
+            Bash(rm -rf *)
+          timeout_minutes: 12
+
+      - name: Report outcome to issue
+        if: always() && github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const success = '${{ steps.fix.outcome }}' === 'success';
+            const body = success
+              ? `✅ \`/fix\` 执行完成, 请查看日志: ${runUrl}\n\n若产生了 draft PR 请 review 后再 ready-for-review。`
+              : `❌ \`/fix\` 未完成 (可能被 headless 模式的 \`[BLOCKED]\` 停止, 或执行出错)。\n\n日志: ${runUrl}\n\n常见原因:\n- 根因在 PRD 层, 需要先改 PRD\n- 存在多种修复方案, 需要人工决定\n- 修改涉及白名单外的文件\n- 修完后测试连续 3 轮未通过`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
