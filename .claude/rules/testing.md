@@ -19,7 +19,7 @@ PRD 业务规则  →  @rules (JSDoc)  →  测试 it() 断言
 
 | 工具 | 用途 | 位置 |
 |------|------|-----|
-| Vitest | 单元测试 / 组件测试 (JSDOM) | `<文件>.test.ts(x)` 与源文件同目录 |
+| Vitest | 单元测试 / 组件测试 (JSDOM) | `workspace/tests/` 下镜像 `workspace/src/` 的 `<name>.test.ts(x)` |
 | Playwright | E2E 测试 / 真实浏览器交互 | `workspace/tests/e2e/*.spec.ts` |
 | @testing-library/react | 组件渲染 + 用户交互模拟 | 配合 Vitest 使用 |
 | MSW (Mock Service Worker) | 拦截 HTTP 请求 mock | `workspace/tests/mocks/` |
@@ -39,21 +39,32 @@ PRD 业务规则  →  @rules (JSDoc)  →  测试 it() 断言
 
 ## 测试文件位置
 
+所有测试**统一放 `workspace/tests/` 下**, 目录结构**镜像** `workspace/src/` 一一对应, 不允许放源文件同目录或 `__tests__/` 子目录。
+
 ```
 workspace/src/features/login/components/LoginForm.tsx
-workspace/src/features/login/components/LoginForm.test.tsx   ← 与源文件同目录
+workspace/tests/features/login/components/LoginForm.test.tsx   ← 镜像源文件路径
 
 workspace/src/features/login/hooks/useLogin.ts
-workspace/src/features/login/hooks/useLogin.test.ts
+workspace/tests/features/login/hooks/useLogin.test.ts
 
-workspace/tests/e2e/login-flow.spec.ts                       ← E2E 单独目录
-workspace/tests/mocks/handlers.ts                            ← MSW handlers 集中
+workspace/src/pages/list/index.tsx
+workspace/tests/pages/list/index.test.tsx
+
+workspace/tests/e2e/login-flow.spec.ts                          ← E2E 单独目录
+workspace/tests/mocks/handlers.ts                               ← MSW handlers 集中
 ```
 
 **规则**:
-- 单元/组件测试与源文件**同目录**, 文件名 `<源文件>.test.ts(x)`
+- 单元/组件测试: `workspace/tests/<src 镜像路径>/<name>.test.ts(x)`
 - E2E 统一放 `workspace/tests/e2e/`, 文件名 `<流程>.spec.ts`
 - MSW handlers 集中在 `workspace/tests/mocks/`, 按模块拆文件
+- 测试文件引用业务代码**一律用 `@/` 别名** (如 `import SearchForm from '@/features/list/components/SearchForm'`), 不要写相对路径 `../../../src/...`
+
+**为什么这么放** (见 `docs/DECISIONS.md` 2026-04-20 条目):
+- `src/` 只放生产代码, 打包 / tsc / 覆盖率扫描无需额外过滤
+- 测试改位置不影响源文件路径稳定性
+- CI 路径统一 `workspace/tests/**`, 单命令跑全量测试
 
 ---
 

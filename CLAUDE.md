@@ -74,7 +74,7 @@ UmiJS 4 + React 18 + TypeScript 5 + Ant Design 5 (@umijs/max)
 - 每条 `@rules` 一个 `it()`, `it` 名字完整引用规则原文
 - 断言查询优先级: `getByRole` > `getByLabelText` > `getByText` > `getByTestId`
 - Mock 策略: HTTP 用 MSW, 项目内部模块不 mock, 不断言 mock 调用次数
-- 位置: 单元/组件测试与源文件同目录 (`<name>.test.tsx`), E2E 放 `workspace/tests/e2e/`
+- 位置: 全部测试统一放 `workspace/tests/` 下, 镜像 `workspace/src/` 结构 (如 `workspace/tests/features/login/components/LoginForm.test.tsx`); E2E 放 `workspace/tests/e2e/`
 - 测试失败分诊顺序: 测试代码 → 环境 → 测试预期 → 源码 (源码是最后才怀疑的)
 
 完整测试规范 → `.claude/rules/testing.md`

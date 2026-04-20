@@ -45,13 +45,24 @@ Read(filePath)  → 解析 JSDoc 头部
 
 ### 3. 选择测试位置
 
-| 文件类型 | 测试位置 | 格式 |
-|---------|---------|------|
-| `.tsx` 组件 | 同目录 `<name>.test.tsx` | Vitest + testing-library |
-| `.ts` hook | 同目录 `<name>.test.ts` | Vitest + renderHook |
-| `.ts` utils | 同目录 `<name>.test.ts` | Vitest 纯单元 |
-| `.ts` api (request 函数) | 同目录 `<name>.test.ts` | Vitest + MSW |
+所有测试**统一放 `workspace/tests/` 下, 镜像 `workspace/src/` 目录结构**。禁止同目录或 `__tests__/` 布局。
+
+| 文件类型 | 测试位置 (源文件路径 `workspace/src/<p>/<name>.xxx`) | 格式 |
+|---------|---------------------------------------------------|------|
+| `.tsx` 组件 | `workspace/tests/<p>/<name>.test.tsx` | Vitest + testing-library |
+| `.ts` hook | `workspace/tests/<p>/<name>.test.ts` | Vitest + renderHook |
+| `.ts` utils | `workspace/tests/<p>/<name>.test.ts` | Vitest 纯单元 |
+| `.ts` api (request 函数) | `workspace/tests/<p>/<name>.test.ts` | Vitest + MSW |
 | Playwright 模式 | `workspace/tests/e2e/<name>.spec.ts` | Playwright |
+
+测试文件内引用业务代码**一律使用 `@/` 别名**, 不写相对路径:
+
+```ts
+import SearchForm from '@/features/list/components/SearchForm';
+vi.mock('@/features/list/api/listApi', () => ({ ... }));
+```
+
+规则来源: [.claude/rules/testing.md](../rules/testing.md) + `docs/DECISIONS.md` 2026-04-20 条目。
 
 ### 4. 生成测试代码
 

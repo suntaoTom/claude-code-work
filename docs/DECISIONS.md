@@ -31,6 +31,34 @@
 
 ---
 
+## 2026-04-20: 测试文件位置统一到 workspace/tests/ (推翻「与源文件同目录」)
+
+**背景**: `.claude/rules/testing.md` 和 `.claude/agents/test-writer.md` 原定「与源文件同目录」, 但 `.claude/commands/test.md` 和现存代码 (`workspace/tests/features/list/`) 已经走 `workspace/tests/` 镜像 `src/` 结构。2026-04-20 meta-audit 报告 (Top 3 必修) 捕到这个冲突 — 规则跟代码分叉会导致 test-writer 生成新测试时再形成第二套布局。
+
+**决策**: 统一到 `workspace/tests/` 镜像 `workspace/src/` 目录结构。所有单元/组件测试路径 `workspace/tests/<src 镜像路径>/<name>.test.ts(x)`; E2E 仍在 `workspace/tests/e2e/`。同步更新:
+- `.claude/rules/testing.md` (位置章节)
+- `.claude/agents/test-writer.md` (Step 3 位置选择表)
+- `.claude/agents/meta-auditor.md` (追溯链维度检查路径)
+- `.claude/agents/bug-fixer.md` (测试补齐路径)
+- `CLAUDE.md` (测试规范概要「位置」)
+- `.claude/commands/test.md` **保持不变** (它从一开始就是对的)
+
+**理由**:
+- **与现状一致** — 已有 `workspace/tests/features/list/` 是这个布局, 规则跟代码而不是让代码迁就规则
+- **src/ 目录干净** — `src/` 只放生产代码, 打包 / tsc / 覆盖率扫描 / 路径过滤都更简单
+- **测试导入走 `@/` 别名** — 避免相对路径爬 `../../../`, 源文件改名测试不跟着动
+- **CI 命令统一** — 一条 `pnpm test workspace/tests/` 跑全量, 不用拼 src 下的散装路径
+
+**替代方案 (放弃)**:
+- **与源文件同目录 (旧规则)** — 好处是「改源码立刻看到测试」, 但 src/ 混产物 + 导入路径一坨相对路径 + tsc/lint/build 要额外过滤规则
+- **`__tests__/` 子目录 (Jest 风格)** — 半吊子, 两种问题都占
+
+**推翻**: 本条推翻 2026-04-20 引入的「co-located tests」隐含规则 (此前未单独立项, 但散落在 `testing.md` / `test-writer.md` / `CLAUDE.md` 三处)。
+
+**影响**: 上方列出的 5 个 `.claude/` 文件 + `CLAUDE.md`; 现有 `workspace/tests/features/list/` 位置**不迁**, 它本来就对。
+
+---
+
 ## 2026-04-20: 引入元审计机制 (meta-auditor + /meta-audit)
 
 **背景**: 框架越长越大, 命令/技能/代理/规则互相引用, 担心规则漂移、死引用、内部不一致。人眼巡检不现实。

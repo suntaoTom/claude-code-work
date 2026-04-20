@@ -80,7 +80,7 @@ tools: [Read, Grep, Glob, Write]
 |-------|------|
 | 源文件 `@prd` 指向的文件存在 | 对 `workspace/src/**/*.{ts,tsx}` Grep `@prd docs/prds/...`, 逐条验证 Read |
 | 源文件 `@task` 指向的 tasks.json 存在且含该 taskId | 同上 |
-| 源文件 `@rules` 数量 ≈ 测试 `it()` 数量 | 对每个有 `@rules` 的源文件, 找同目录 `.test.(ts|tsx)`, 数 `@rules` 行数 vs `it(` 调用数 |
+| 源文件 `@rules` 数量 ≈ 测试 `it()` 数量 | 对每个有 `@rules` 的 `workspace/src/<p>/<name>.ts(x)`, 找 `workspace/tests/<p>/<name>.test.(ts|tsx)`, 数 `@rules` 行数 vs `it(` 调用数 |
 | PRD 里标 ✅ 的 operationId 都在 `openapi.json` | Read `docs/prds/*.md` 提取, 对照 `workspace/api-spec/openapi.json` |
 | tasks.json 里 status=done 但源文件不存在 | 对每个 done 任务的 `filePath`, Read 验证存在 |
 

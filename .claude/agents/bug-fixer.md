@@ -92,7 +92,7 @@ cd workspace && pnpm vitest run <相关测试文件>
 ### 5. 补测试用例 (可选)
 
 如果修复暴露了测试覆盖不足 (bug 能漏出来说明缺测试):
-- 在对应 `<文件>.test.ts(x)` 补一个 `it()`, 对应 bugId
+- 在 `workspace/tests/` 镜像路径下的 `<文件>.test.ts(x)` 补一个 `it()`, 对应 bugId
 - 断言要能在修复前 fail、修复后 pass
 - 遵循 [.claude/rules/testing.md](../rules/testing.md) 的规范
 
