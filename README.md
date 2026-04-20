@@ -21,13 +21,13 @@
 
 一个完整的 SDLC (软件开发生命周期) 框架, 由五类部件协作:
 
-| 部件 | 位置 | 触发方式 | 数量 | 适合 |
-|------|------|---------|------|------|
-| **命令** (commands) | [.claude/commands/](.claude/commands/) | 用户 `/<name>` | 14 | 主工作流 (纯思考) |
-| **技能包** (skills) | [.claude/skills/](.claude/skills/) | 显式或 AI 自动 | 4 | 跑脚本拿数据 |
-| **子代理** (agents) | [.claude/agents/](.claude/agents/) | 主命令 spawn | 4 | 并行 / 保护 context |
-| **钩子** (hooks) | [.claude/hooks/](.claude/hooks/) | 事件自动 | 3 | 静默守护 (不阻断) |
-| **规则** (rules) | [.claude/rules/](.claude/rules/) | AI 自动遵守 | 5 | 长期稳定的编码约束 |
+| 部件                | 位置                                   | 触发方式       | 数量 | 适合                |
+| ------------------- | -------------------------------------- | -------------- | ---- | ------------------- |
+| **命令** (commands) | [.claude/commands/](.claude/commands/) | 用户 `/<name>` | 14   | 主工作流 (纯思考)   |
+| **技能包** (skills) | [.claude/skills/](.claude/skills/)     | 显式或 AI 自动 | 4    | 跑脚本拿数据        |
+| **子代理** (agents) | [.claude/agents/](.claude/agents/)     | 主命令 spawn   | 4    | 并行 / 保护 context |
+| **钩子** (hooks)    | [.claude/hooks/](.claude/hooks/)       | 事件自动       | 3    | 静默守护 (不阻断)   |
+| **规则** (rules)    | [.claude/rules/](.claude/rules/)       | AI 自动遵守    | 5    | 长期稳定的编码约束  |
 
 边界和添加规范详见 [.claude/README.md](.claude/README.md)。
 
@@ -52,7 +52,7 @@ AI-Frontend-Automation/
 │   ├── tasks/                ← /plan 生成的任务清单 (JSON)
 │   ├── bug-reports/          ← 测试端 AI 或人工报的 bug
 │   └── retrospectives/       ← /meta-audit 产出的健康度快照 (只读, 不可变)
-└── workspace/                ← 实际前端工程 (UmiJS 4 + React 18 + TS 5)
+└── workspace/                ← 实际业务工程 (可替换, 当前示例: 前端 UmiJS, 换工种见 docs/ADAPTING.md)
     ├── src/
     ├── tests/                ← 镜像 src/ 结构
     ├── api-spec/             ← OpenAPI 契约 (openapi.json + 可选 openapi.local.json)
@@ -100,14 +100,6 @@ AI-Frontend-Automation/
 
 ---
 
-## 技术栈
-
-UmiJS 4 · React 18 · TypeScript 5 · Ant Design 5 · Vitest · Playwright · MSW · pnpm · Vite 模式
-
-详见 [.claude/rules/tech-stack.md](.claude/rules/tech-stack.md)。
-
----
-
 ## 快速开始
 
 ```bash
@@ -132,19 +124,20 @@ claude
 
 ## 我该从哪里开始看
 
-| 我是... | 第一个打开 |
-|--------|----------|
-| **第一次接手项目** | [docs/WORKFLOW.md](docs/WORKFLOW.md) — 八步法操作手册 |
-| 想知道这套框架怎么演变的 | [docs/DECISIONS.md](docs/DECISIONS.md) — 架构决策记录 (ADR) |
-| 想了解编码规范 | [CLAUDE.md](CLAUDE.md) — 规则入口, 引到各条细则 |
-| 要改框架机制 (加命令 / skill / agent) | [.claude/README.md](.claude/README.md) — 五类部件的边界 |
-| 查历次健康度扫描 | [docs/retrospectives/](docs/retrospectives/) — `/meta-audit` 只读观察报告 |
-| 前后端协作 / OpenAPI 流程 | [docs/WORKFLOW.md#🔌-前后端协作](docs/WORKFLOW.md#-前后端协作-重点) |
-| 测试端 AI 怎么对接 | [docs/bug-reports/README.md](docs/bug-reports/README.md) |
-| 启用 GitHub 自动化 (claude-fix / deploy) | [.github/SETUP.md](.github/SETUP.md) |
+| 我是...                                  | 第一个打开                                                                |
+| ---------------------------------------- | ------------------------------------------------------------------------- |
+| **第一次接手项目**                       | [docs/WORKFLOW.md](docs/WORKFLOW.md) — 八步法操作手册                     |
+| 想知道这套框架怎么演变的                 | [docs/DECISIONS.md](docs/DECISIONS.md) — 架构决策记录 (ADR)               |
+| 想了解编码规范                           | [CLAUDE.md](CLAUDE.md) — 规则入口, 引到各条细则                           |
+| 要改框架机制 (加命令 / skill / agent)    | [.claude/README.md](.claude/README.md) — 五类部件的边界                   |
+| 查历次健康度扫描                         | [docs/retrospectives/](docs/retrospectives/) — `/meta-audit` 只读观察报告 |
+| 前后端协作 / OpenAPI 流程                | [docs/WORKFLOW.md#🔌-前后端协作](docs/WORKFLOW.md#-前后端协作-重点)       |
+| 测试端 AI 怎么对接                       | [docs/bug-reports/README.md](docs/bug-reports/README.md)                  |
+| 启用 GitHub 自动化 (claude-fix / deploy) | [.github/SETUP.md](.github/SETUP.md)                                      |
+| 想把这套框架迁移到后端 / 数据 / 其他工种 | [docs/ADAPTING.md](docs/ADAPTING.md) — 跨工种适配清单                     |
 
 ---
 
 ## 许可证
 
-MIT (可选, 按需修改)
+MIT
