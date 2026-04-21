@@ -1,6 +1,6 @@
 <div align="center">
 
-# Claude Code Work
+# Claude Code WorkFlow
 
 <p><strong>An AI-driven R&D workflow framework</strong></p>
 
@@ -54,10 +54,10 @@ AI executes, humans supervise every critical checkpoint · Runs on top of <a hre
 
 The framework uses Gates and Archives to directly address the two classic pain points of AI-collaborative R&D:
 
-| Problem            | Symptom                       | How the framework treats it                                                 |
-| ------------------ | ----------------------------- | --------------------------------------------------------------------------- |
+| Problem                   | Symptom                                            | How the framework treats it                                                                      |
+| ------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | **AI has no constraints** | Makes things up, edits randomly, works around bugs | Hard Gates (PRD Completeness / `@rules` Traceability Chain / No Hardcoding / Silent Guard Hooks) |
-| **AI has no memory**      | Every session starts from guessing | Archive accumulation (ADR / retrospectives / tasks.json) — readable across sessions |
+| **AI has no memory**      | Every session starts from guessing                 | Archive accumulation (ADR / retrospectives / tasks.json) — readable across sessions              |
 
 > The framework is **not tied to a tech stack and not tied to a domain**. Domain specialization lives in `.claude/rules/*.md` and `workspace/`.
 
@@ -76,13 +76,13 @@ The framework uses Gates and Archives to directly address the two classic pain p
 
 ## Framework Five-Part Architecture
 
-| Part                | Location                               | Trigger          | Best for                     |
-| ------------------- | -------------------------------------- | ---------------- | ---------------------------- |
-| **Commands**        | [.claude/commands/](.claude/commands/) | User `/<name>`   | Main workflow (pure thinking) |
-| **Skills**          | [.claude/skills/](.claude/skills/)     | Explicit or auto | Running scripts to fetch data |
-| **Subagents**       | [.claude/agents/](.claude/agents/)     | Main command spawn | Parallel / context isolation |
-| **Hooks**           | [.claude/hooks/](.claude/hooks/)       | Auto on events   | Silent guard (non-blocking)  |
-| **Rules**           | [.claude/rules/](.claude/rules/)       | AI follows automatically | Long-term stable artifact constraints |
+| Part          | Location                               | Trigger                  | Best for                              |
+| ------------- | -------------------------------------- | ------------------------ | ------------------------------------- |
+| **Commands**  | [.claude/commands/](.claude/commands/) | User `/<name>`           | Main workflow (pure thinking)         |
+| **Skills**    | [.claude/skills/](.claude/skills/)     | Explicit or auto         | Running scripts to fetch data         |
+| **Subagents** | [.claude/agents/](.claude/agents/)     | Main command spawn       | Parallel / context isolation          |
+| **Hooks**     | [.claude/hooks/](.claude/hooks/)       | Auto on events           | Silent guard (non-blocking)           |
+| **Rules**     | [.claude/rules/](.claude/rules/)       | AI follows automatically | Long-term stable artifact constraints |
 
 Boundaries and addition conventions — see [.claude/README.md](.claude/README.md).
 
@@ -210,12 +210,12 @@ The framework core itself **requires no extra installation** — Claude Code CLI
 
 ## Branch Guide
 
-| Branch        | Purpose                                                     |
-| ------------- | ----------------------------------------------------------- |
-| `main`        | Framework core overview (domain-agnostic, you are here)     |
+| Branch        | Purpose                                                                     |
+| ------------- | --------------------------------------------------------------------------- |
+| `main`        | Framework core overview (domain-agnostic, you are here)                     |
 | `ai-frontend` | Frontend domain implementation (UmiJS + React + antd + Vitest + Playwright) |
-| `feature`     | Integration branch for development                          |
-| `Harness`     | Iteration branch for the framework core                     |
+| `feature`     | Integration branch for development                                          |
+| `Harness`     | Iteration branch for the framework core                                     |
 
 To see a full domain example, check out the corresponding branch (e.g., `git checkout ai-frontend`). `ai-backend` / `ai-data` and other branches will be added over time.
 
@@ -223,14 +223,14 @@ To see a full domain example, check out the corresponding branch (e.g., `git che
 
 ## Where to Start
 
-| I am...                                | Open this first                                                              |
-| -------------------------------------- | ---------------------------------------------------------------------------- |
-| **Picking up the framework for the first time** | [docs/WORKFLOW.md](docs/WORKFLOW.md) — Eight-Step operations manual        |
-| Wanting to port the framework to a domain | [docs/ADAPTING.md](docs/ADAPTING.md) — Cross-domain adaptation checklist |
-| Modifying framework mechanisms (add command / skill / agent) | [.claude/README.md](.claude/README.md) — Boundaries of the five parts |
-| Checking how the framework evolved     | [docs/DECISIONS.md](docs/DECISIONS.md) — Architecture Decision Records (ADR) |
-| Reviewing past health scans            | [docs/retrospectives/](docs/retrospectives/) — `/meta-audit` read-only reports |
-| Enabling GitHub automation             | [.github/SETUP.md](.github/SETUP.md)                                         |
+| I am...                                                      | Open this first                                                                |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| **Picking up the framework for the first time**              | [docs/WORKFLOW.md](docs/WORKFLOW.md) — Eight-Step operations manual            |
+| Wanting to port the framework to a domain                    | [docs/ADAPTING.md](docs/ADAPTING.md) — Cross-domain adaptation checklist       |
+| Modifying framework mechanisms (add command / skill / agent) | [.claude/README.md](.claude/README.md) — Boundaries of the five parts          |
+| Checking how the framework evolved                           | [docs/DECISIONS.md](docs/DECISIONS.md) — Architecture Decision Records (ADR)   |
+| Reviewing past health scans                                  | [docs/retrospectives/](docs/retrospectives/) — `/meta-audit` read-only reports |
+| Enabling GitHub automation                                   | [.github/SETUP.md](.github/SETUP.md)                                           |
 
 ---
 
