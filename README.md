@@ -1,5 +1,7 @@
 <div align="center">
 
+**Language:** [**English**](https://github.com/suntaoTom/claude-code-work/blob/main/README.md) | [简体中文](https://github.com/suntaoTom/claude-code-work/blob/main-zh/README.md)
+
 # Claude Code WorkFlow
 
 <p><strong>An AI-driven R&D workflow framework</strong></p>
