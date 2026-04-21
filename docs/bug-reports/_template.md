@@ -1,71 +1,71 @@
-# UI 测试报告: <模块 / 页面名>
+# UI Test Report: <Module / Page Name>
 
-> **这份模板是机读的**, 字段格式固定。测试端 AI 填写时请严格遵守结构, 不要自由发挥。
-> 填写规则见 [README.md](./README.md)。
+> **This template is machine-readable**, so the field format is fixed. Test-side AIs must follow the structure strictly and not improvise.
+> See [README.md](./README.md) for filling rules.
 
-## 元信息
+## Metadata
 
-| 项 | 值 |
-|----|----|
-| 报告 ID | `2026-04-16-login` (= 文件名去掉扩展名) |
-| 创建日期 | 2026-04-16 |
-| 测试工具 | Playwright MCP / Browser Use / Claude Computer Use / Appium / 模拟器 / 其他 |
-| 测试范围 | `/login`, `/register` |
-| 设备 / 浏览器 / 分辨率 | Chrome 131 / 1440x900 或 iPhone 15 Pro / Safari / 390x844 |
-| 触发人 | @username (人触发) / ci (自动触发) |
-| 关联 PRD | docs/prds/login.md (如涉及多个可列多行) |
+| Item | Value |
+|------|-------|
+| Report ID | `2026-04-16-login` (= filename without extension) |
+| Created | 2026-04-16 |
+| Test Tool | Playwright MCP / Browser Use / Claude Computer Use / Appium / Simulator / Other |
+| Test Scope | `/login`, `/register` |
+| Device / Browser / Resolution | Chrome 131 / 1440x900 or iPhone 15 Pro / Safari / 390x844 |
+| Triggered By | @username (human) / ci (automated) |
+| Related PRD | docs/prds/login.md (list multiple lines if applicable) |
 
-## 概览 (必填)
+## Overview (Required)
 
-> 所有 bug 先在这个表里汇总一遍, 下面再逐个展开。`/fix` 会优先读这个表决定分组策略。
+> Summarize every bug here first, then expand each below. `/fix` prefers this table when deciding grouping strategy.
 
-| Bug ID | 优先级 | 模块 | 现象 (一句话) |
-|--------|-------|------|--------------|
-| B001 | P0 | login | 登录成功后 Dashboard 白屏 |
-| B002 | P1 | login | 勾选"记住我"后 token 有效期未延长 |
-| B003 | P2 | register | 提交按钮 hover 颜色与 Design Token 不符 |
+| Bug ID | Priority | Module | Symptom (one-line) |
+|--------|----------|--------|--------------------|
+| B001 | P0 | login | Dashboard shows blank screen after successful login |
+| B002 | P1 | login | Checking "Remember me" does not extend the token lifetime |
+| B003 | P2 | register | Submit button hover color does not match Design Tokens |
 
-**优先级定义**:
-- **P0**: 阻塞主流程 (登录/支付/核心数据), 必须立即修
-- **P1**: 功能异常但有绕过方式, 本迭代内修
-- **P2**: 视觉/文案/次要交互, 可排期
+**Priority definitions**:
+- **P0**: Blocks the main flow (login / payment / core data) — must be fixed immediately
+- **P1**: Feature is broken but has a workaround — fix in the current iteration
+- **P2**: Visual / copy / minor interaction — can be scheduled
 
 ---
 
 ## Bug B001
 
-- **优先级**: P0
-- **模块**: login
-- **关联 PRD**: docs/prds/login.md#账号密码登录
-- **关联任务** (可选, 测试端 AI 推断填写): docs/tasks/tasks-login-2026-04-15.json#T008
-- **涉及文件** (可选, 测试端 AI 推断填写): workspace/src/pages/index.tsx
+- **Priority**: P0
+- **Module**: login
+- **Related PRD**: docs/prds/login.md#账号密码登录
+- **Related Task** (optional, test-side AI can infer): docs/tasks/tasks-login-2026-04-15.json#T008
+- **Affected Files** (optional, test-side AI can infer): workspace/src/pages/index.tsx
 
-### 现象
+### Symptom
 
-> 一句话描述看到了什么问题。不要写"页面有 bug", 要具体。
+> One-sentence description of what you observed. Do not write "the page has a bug" — be specific.
 
-登录成功后跳转到 `/`, 页面完全白屏, 控制台报 `TypeError: Cannot read property 'name' of undefined`
+After a successful login, the page redirects to `/` but the screen goes completely blank, and the console throws `TypeError: Cannot read property 'name' of undefined`.
 
-### 复现
+### Reproduction
 
 - **URL**: `/login`
-- **前置条件**: 测试账号 `admin/admin123`, 浏览器清空 localStorage
-- **步骤** (编号有序, 每步一行):
-  1. 打开 `/login`
-  2. 账号输入框输入 `admin`
-  3. 密码输入框输入 `admin123`
-  4. 点击"登录"按钮
-  5. 等待页面跳转完成
+- **Preconditions**: Test account `admin/admin123`, browser localStorage cleared
+- **Steps** (numbered, one per line):
+  1. Open `/login`
+  2. Enter `admin` in the username field
+  3. Enter `admin123` in the password field
+  4. Click the "Login" button
+  5. Wait for the redirect to complete
 
-### 期望 vs 实际
+### Expected vs. Actual
 
-| 期望 | 实际 |
-|------|------|
-| 跳转到 `/`, 显示 Dashboard 内容 | 跳转到 `/`, 页面白屏, 无任何渲染 |
+| Expected | Actual |
+|----------|--------|
+| Redirect to `/`, render Dashboard content | Redirect to `/`, page is blank, nothing renders |
 
-### 控制台错误
+### Console Errors
 
-> 粘贴浏览器 DevTools Console 的报错原文, 保留堆栈。无报错时写"无"。
+> Paste the error verbatim from DevTools Console, keeping the stack trace. Write "none" if there are no errors.
 
 ```
 TypeError: Cannot read property 'name' of undefined
@@ -74,111 +74,111 @@ TypeError: Cannot read property 'name' of undefined
     ...
 ```
 
-### 网络请求
+### Network Requests
 
-> 列出相关的 API 调用及响应, 无则写"无"。
+> List the relevant API calls and responses; "none" if irrelevant.
 
-| 时机 | 请求 | 状态 | 备注 |
-|------|------|------|------|
-| 点击登录 | `POST /api/auth/login` | 200 | 返回 token 正常 |
-| 跳转后 | `GET /api/auth/me` | 200 | response 缺少 `name` 字段, 只有 `userId` / `role` |
+| Timing | Request | Status | Notes |
+|--------|---------|--------|-------|
+| Click login | `POST /api/auth/login` | 200 | Token returned normally |
+| After redirect | `GET /api/auth/me` | 200 | Response missing `name` field; only `userId` / `role` present |
 
-### 截图
+### Screenshots
 
-> 截图放在 `docs/bug-reports/screenshots/<Bug ID>-<编号>.png`, 可多张。无则留空或删除此段。
+> Screenshots go under `docs/bug-reports/screenshots/<Bug ID>-<sequence>.png`; can be multiple. Leave empty or delete this section if none.
 
-- `docs/bug-reports/screenshots/B001-01-blank.png` — 白屏截图
-- `docs/bug-reports/screenshots/B001-02-devtools.png` — Console 报错截图
+- `docs/bug-reports/screenshots/B001-01-blank.png` — blank-screen screenshot
+- `docs/bug-reports/screenshots/B001-02-devtools.png` — console-error screenshot
 
-### 根因推测 (可选, 测试端 AI 可留空)
+### Root-Cause Guess (optional — test-side AI may leave blank)
 
-> 测试端 AI 如果能读源码, 可以给一个推测, 但**不要修代码**。推测仅供 `/fix` 参考。
+> If the test-side AI can read source code, it may offer a guess, but **must not change code**. The guess is just a hint for `/fix`.
 
-推测: Dashboard 组件从 `useModel('@@initialState').currentUser.name` 取数据, 但 `getCurrentUser` 接口返回的 user 对象没有 `name` 字段。需 `/fix` 进一步验证 (改接口还是改组件取字段方式)。
+Guess: Dashboard reads data via `useModel('@@initialState').currentUser.name`, but the `getCurrentUser` endpoint's response lacks a `name` field. `/fix` needs to verify (change the API or change how the component reads the field).
 
 ---
 
 ## Bug B002
 
-- **优先级**: P1
-- **模块**: login
-- **关联 PRD**: docs/prds/login.md#账号密码登录
+- **Priority**: P1
+- **Module**: login
+- **Related PRD**: docs/prds/login.md#账号密码登录
 
-### 现象
+### Symptom
 
-勾选"记住我"登录后, 关闭浏览器 8 天再打开, token 已失效需要重新登录。期望 30 天内免登录。
+After logging in with "Remember me" checked, closing the browser and reopening it 8 days later requires re-login. Expected: 30-day passive session.
 
-### 复现
+### Reproduction
 
 - **URL**: `/login`
-- **前置条件**: 清空 cookie/localStorage
-- **步骤**:
-  1. 输入账号密码
-  2. **勾选"记住我"**
-  3. 点击登录
-  4. 观察 `localStorage.refreshTokenExpiresAt` 的值
+- **Preconditions**: Clear cookies / localStorage
+- **Steps**:
+  1. Enter username and password
+  2. **Check "Remember me"**
+  3. Click login
+  4. Inspect the value of `localStorage.refreshTokenExpiresAt`
 
-### 期望 vs 实际
+### Expected vs. Actual
 
-| 期望 | 实际 |
-|------|------|
-| refreshTokenExpiresAt 距今 30 天 | refreshTokenExpiresAt 距今 7 天 (和不勾选"记住我"一样) |
+| Expected | Actual |
+|----------|--------|
+| refreshTokenExpiresAt is 30 days from now | refreshTokenExpiresAt is 7 days from now (same as when "Remember me" is unchecked) |
 
-### 控制台错误
+### Console Errors
 
-无
+None
 
-### 网络请求
+### Network Requests
 
-| 时机 | 请求 | 状态 | 备注 |
-|------|------|------|------|
-| 点击登录 | `POST /api/auth/login` | 200 | **request body 没带 `remember: true` 字段** |
+| Timing | Request | Status | Notes |
+|--------|---------|--------|-------|
+| Click login | `POST /api/auth/login` | 200 | **Request body omits the `remember: true` field** |
 
-### 截图
+### Screenshots
 
-无
+None
 
-### 根因推测 (可选)
+### Root-Cause Guess (optional)
 
-推测: `workspace/src/features/login/api/loginApi.ts` 的请求函数漏传 `remember` 参数。违反 `@rules` "勾选记住我时 refresh token 有效期延长"。
+Guess: The request function in `workspace/src/features/login/api/loginApi.ts` omits the `remember` parameter, violating the `@rules` entry "when Remember me is checked, the refresh token's lifetime is extended".
 
 ---
 
 ## Bug B003
 
-- **优先级**: P2
-- **模块**: register
-- **关联 PRD**: docs/prds/login.md#用户注册
+- **Priority**: P2
+- **Module**: register
+- **Related PRD**: docs/prds/login.md#用户注册
 
-### 现象
+### Symptom
 
-注册页"提交"按钮 hover 时背景色为 `#1890ff`, 但 Design Token 主色已改为 `#2563eb`。
+The "Submit" button on the register page shows a `#1890ff` background on hover, but the Design Token primary color was updated to `#2563eb`.
 
-### 复现
+### Reproduction
 
 - **URL**: `/register`
-- **步骤**:
-  1. 打开 `/register`
-  2. 鼠标悬停在"提交"按钮上
+- **Steps**:
+  1. Open `/register`
+  2. Hover the mouse over the "Submit" button
 
-### 期望 vs 实际
+### Expected vs. Actual
 
-| 期望 | 实际 |
-|------|------|
-| 背景色 = `token.colorPrimaryHover` (= `#3b7fe8`) | 背景色 = `#1890ff` (硬编码, 违反 P0 禁止硬编码规则) |
+| Expected | Actual |
+|----------|--------|
+| Background = `token.colorPrimaryHover` (= `#3b7fe8`) | Background = `#1890ff` (hardcoded, violates the P0 No Hardcoding rule) |
 
-### 控制台错误
+### Console Errors
 
-无
+None
 
-### 网络请求
+### Network Requests
 
-无
+None
 
-### 截图
+### Screenshots
 
 - `docs/bug-reports/screenshots/B003-hover.png`
 
-### 根因推测
+### Root-Cause Guess
 
-推测是 RegisterForm 的某处 style 里写了 `backgroundColor: '#1890ff'` 而非引用 `token`。违反 `.claude/rules/no-hardcode.md`。
+Guess: somewhere in RegisterForm a `backgroundColor: '#1890ff'` is written inline instead of referencing `token`. Violates `.claude/rules/no-hardcode.md`.
