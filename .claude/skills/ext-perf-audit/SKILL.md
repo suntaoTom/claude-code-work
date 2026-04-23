@@ -1,69 +1,69 @@
 ---
 name: ext-perf-audit
-description: 前端性能审计。分析包体积、React 渲染性能、网络瀑布、内存泄漏、首屏加载。用户明确要求「性能审计 / 页面卡顿分析 / 包体积优化 / 首屏优化」时触发。
+description: Frontend performance audit. Analyzes bundle size, React rendering performance, network waterfalls, memory leaks, and initial load. Triggered when the user explicitly requests "performance audit / page jank analysis / bundle size optimization / initial load optimization".
 ---
 
-# ext-perf-audit — 性能审计
+# ext-perf-audit — Performance Audit
 
-你现在是前端性能优化专家。对指定的组件/页面/模块进行性能审计。
+You are now a frontend performance optimization expert. Perform a performance audit on the specified component / page / module.
 
-## 执行方式
+## Execution Approach
 
-**先跑脚本拿数据, 再用 AI 做静态分析**。脚本负责度量, AI 负责识别模式。
+**Run scripts to gather data first, then use AI for static analysis.** Scripts handle measurement; AI handles pattern recognition.
 
-### 第一步: 构建产物分析 (如有 dist)
+### Step 1: Build Artifact Analysis (if dist exists)
 
 ```bash
 bash .claude/skills/ext-perf-audit/scripts/bundle-size.sh
 ```
 
-脚本输出:
-- 总体积 + 按 chunk 排序
-- 大于 100KB 的 JS 文件列表
-- 大于 500KB 的资源文件列表 (图片/字体)
+Script output:
+- Total size + chunks sorted by size
+- List of JS files larger than 100KB
+- List of asset files larger than 500KB (images / fonts)
 
-AI 识别:
-- 单 chunk > 500KB 的警告
-- 图片未压缩 / 未 WebP 化
-- 未按路由 chunk 拆分 (如 `index.*.js` 超大)
+AI identifies:
+- Warnings for any single chunk > 500KB
+- Images not compressed / not converted to WebP
+- No route-level code splitting (e.g., an oversized `index.*.js`)
 
-### 第二步: 依赖体积速查
+### Step 2: Dependency Size Quick Scan
 
 ```bash
 bash .claude/skills/ext-perf-audit/scripts/heavy-deps.sh
 ```
 
-脚本列出 node_modules 中体积最大的前 20 个包, AI 对照 [references/perf-checklist.md](references/perf-checklist.md) 的「常见体积杀手」一节给建议。
+The script lists the top 20 largest packages in node_modules. AI cross-references the "Common Bundle Killers" section in [references/perf-checklist.md](references/perf-checklist.md) and provides recommendations.
 
-### 第三步: 静态代码扫描 (AI 读源码)
+### Step 3: Static Code Scan (AI reads source)
 
-按 [references/perf-checklist.md](references/perf-checklist.md) 的 5 大维度检查 `$ARGUMENTS` 指定的目录:
+Check the directory specified by `$ARGUMENTS` across the 5 dimensions in [references/perf-checklist.md](references/perf-checklist.md):
 
-1. **包体积** — 整库 import / 重复依赖 / console.log / 未懒加载
-2. **渲染性能** — 缺 memo/useMemo/useCallback / 无 key / 渲染路径新建引用 / 状态过高 / JS 做 CSS 的事
-3. **网络性能** — 串行请求本可并行 / 缺缓存 / 图片格式 / 缺 prefetch
-4. **内存** — useEffect 缺 cleanup / 闭包持有大对象 / 无虚拟滚动
-5. **首屏** — 阻塞关键路径 / 缺 Skeleton / 瀑布流请求
+1. **Bundle size** — full-library imports / duplicate dependencies / console.log / missing lazy loading
+2. **Rendering performance** — missing memo/useMemo/useCallback / missing keys / new references created in render path / state hoisted too high / JS doing CSS's job
+3. **Network performance** — serial requests that could be parallel / missing caching / image formats / missing prefetch
+4. **Memory** — useEffect missing cleanup / closures holding large objects / no virtual scrolling
+5. **Initial load** — blocking the critical path / missing Skeleton / waterfall requests
 
-## 输出格式
+## Output Format
 
 ```
-🔴 严重 (影响用户体验):
-- [文件:行号] 问题描述
-  影响: 预估影响 (如: 首屏多 800ms / bundle +400KB)
-  修复: 具体方案 + 代码示例
+🔴 Critical (impacts user experience):
+- [file:line] Issue description
+  Impact: Estimated impact (e.g. +800ms on initial load / bundle +400KB)
+  Fix: Specific solution + code example
 
-🟡 中等 (可优化):
-- [文件:行号] 问题描述
-  修复: 方案
+🟡 Moderate (worth optimizing):
+- [file:line] Issue description
+  Fix: Solution
 
-🔵 建议 (锦上添花):
-- [文件:行号] 问题描述
+🔵 Suggestion (nice to have):
+- [file:line] Issue description
 
-📊 总评: X/10, 一句话总结
+📊 Overall: X/10, one-sentence summary
 ```
 
-## 使用方式
+## Usage
 
 ```
 /ext-perf-audit workspace/src/features/login/
@@ -71,8 +71,8 @@ bash .claude/skills/ext-perf-audit/scripts/heavy-deps.sh
 /ext-perf-audit workspace/src/components/DataTable.tsx
 ```
 
-## 设计原则
+## Design Principles
 
-- 能用脚本度量的就别让 AI 估算 (体积/依赖大小)
-- 所有建议必须给出**预估影响**, 没有数字的建议只放 🔵
-- 不建议激进重构, 优先给最小修改收益最大的 fix
+- If a script can measure it, don't ask AI to estimate it (bundle size / dependency size)
+- Every recommendation must include an **estimated impact**; suggestions without numbers go under 🔵 only
+- Avoid recommending aggressive refactors; prioritize fixes with maximum gain for minimum change
