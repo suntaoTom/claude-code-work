@@ -1,42 +1,42 @@
-你刚刚加入这个项目, 请按以下步骤了解项目情况:
+You just joined this project. Please follow these steps to get oriented:
 
-> 注意: CLAUDE.md 及 .claude/rules/ 下的项目规范已自动加载, 无需重复阅读。
+> Note: CLAUDE.md and project conventions under .claude/rules/ are already auto-loaded — no need to re-read them.
 
-## 第一步: 了解项目现状
+## Step 1: Understand the Current Project State
 
-1. 扫描 workspace/src/ 目录结构, 了解已有的代码模块和文件布局
-2. 检查 workspace/package.json 确认已安装的依赖和可用脚本
-3. 检查 workspace/config/ 目录了解项目配置 (路由/主题/代理等)
+1. Scan the `workspace/src/` directory structure to understand the existing code modules and file layout
+2. Check `workspace/package.json` to confirm installed dependencies and available scripts
+3. Check the `workspace/config/` directory to understand project configuration (routes / theme / proxy, etc.)
 
-## 第二步: 检查当前任务进度
+## Step 2: Check Current Task Progress
 
-请扫描 docs/tasks/ 目录下所有 JSON 文件, 汇总输出:
+Scan all JSON files in the `docs/tasks/` directory and output a summary:
 
-1. **进行中的模块**: 列出所有包含非 done 任务的模块
-2. **待办任务**: 列出所有 status 为 pending 或 in-progress 的任务, 按模块分组
-3. **已完成**: 统计已完成任务数 / 总任务数
+1. **In-progress modules**: list all modules that have non-done tasks
+2. **Pending tasks**: list all tasks with status `pending` or `in-progress`, grouped by module
+3. **Completed**: count of done tasks / total tasks
 
-输出格式:
+Output format:
 ```
-📋 项目当前状态
+📋 Current Project Status
 ━━━━━━━━━━━━━━
 
-[模块名1] (3/5 已完成)
+[Module 1] (3/5 complete)
   ✅ T001 - userApi (done)
   ✅ T002 - useUserStore (done)
   ✅ T003 - UserTable (done)
   ⏳ T004 - UserForm (in-progress)
-  ⬜ T005 - UserPage (pending, 依赖 T004)
+  ⬜ T005 - UserPage (pending, depends on T004)
 
-[模块名2] (0/3 已完成)
+[Module 2] (0/3 complete)
   ⬜ T001 - orderApi (pending)
-  ⬜ T002 - useOrderStore (pending, 依赖 T001)
-  ⬜ T003 - OrderList (pending, 依赖 T002)
+  ⬜ T002 - useOrderStore (pending, depends on T001)
+  ⬜ T003 - OrderList (pending, depends on T002)
 
 ━━━━━━━━━━━━━━
-总计: X 个模块, Y/Z 任务已完成
+Total: X modules, Y/Z tasks complete
 ```
 
-## 第三步: 等待指令
+## Step 3: Wait for Instructions
 
-汇报完成后, 等待我的下一步指令。不要主动开始编码。
+After reporting, wait for my next instruction. Do not start coding on your own.

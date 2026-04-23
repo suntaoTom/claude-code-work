@@ -1,153 +1,154 @@
-你现在是架构师角色。请根据我提供的需求, 完成以下工作:
+You are now acting as a Software Architect. Based on the requirements I provide, complete the following:
 
-## 第零步: 定位 PRD (强制)
+## Step 0: Locate the PRD (mandatory)
 
-任务清单必须可追溯到 PRD 锚点, 否则后续 `/test` 命令无法基于业务规则生成测试。
+Task lists must be traceable to PRD anchors — otherwise the downstream `/test` command cannot generate tests from business rules.
 
-1. **判断输入类型**:
-   - 输入是 `@docs/prds/xxx.md` 路径 → 直接读取
-   - 输入是文字描述 → **停下来询问用户**:
-     - 是否已有对应 PRD? 路径在哪?
-     - 没有的话, **建议先跑 `/prd <需求描述>` 生成 PRD 草稿**, 人工补齐 `[待确认]` 后再回来跑 `/plan`
-   - 不要在没有 PRD 的情况下硬编需求, 那样产出的 acceptanceCriteria 是 AI 猜的, 测试也会跟着错
+1. **Determine input type**:
+   - Input is `@docs/prds/xxx.md` path → read directly
+   - Input is a text description → **stop and ask the user**:
+     - Does a corresponding PRD already exist? What is the path?
+     - If not, **recommend running `/prd <requirement description>` to generate a PRD draft first**, then fill in all `[TBD]` items before coming back to run `/plan`
+   - Do not hardcode requirements without a PRD — the resulting `acceptanceCriteria` would be AI guesses, and tests would be wrong too
 
-2. **提取 PRD 中所有功能点的二级标题**, 作为后续 `prdRef` 的锚点来源:
+2. **Extract all H2 feature headings from the PRD** as anchor sources for subsequent `prdRef` fields:
    ```
-   docs/prds/user-list.md 提取到的功能锚点:
-     - #搜索表单
-     - #数据列表
-     - #批量删除
+   Anchors extracted from docs/prds/user-list.md:
+     - #search-form
+     - #data-table
+     - #bulk-delete
    ```
 
-3. **如果 PRD 缺少「业务规则」章节**, 提示用户补齐再继续 (没有规则就没法生成靠谱的测试)
+3. **If the PRD lacks a "Business Rules" section**, prompt the user to fill it in before continuing (no rules = no reliable test generation)
 
-4. **硬性闸门: 调用 `/prd-check` 做完备性检查 (不通过则直接停)**
+4. **Hard gate: invoke `/prd-check` for completeness validation (stop if it fails)**
 
-   **必须**先对输入的 PRD 执行 `/prd-check` 命令 (定义在 `.claude/commands/prd-check.md`), 获取检查结果:
+   **Must** run `/prd-check` against the input PRD (defined in `.claude/commands/prd-check.md`) and get the result:
 
-   - **通过** → 继续进入「分析步骤」
-   - **不通过** → 直接输出 `/prd-check` 的报错内容, **终止执行**, 不进入任务拆解
+   - **Pass** → proceed to the "Analysis Steps"
+   - **Fail** → output the `/prd-check` error content, **terminate**, do not proceed to task breakdown
 
-   **执行方式**: 作为 `/plan` 的内嵌步骤, 按 `prd-check.md` 定义的 5 项检查全部跑一遍, 规则、输出格式、阻塞判定完全一致。**不要重复实现检查逻辑, 也不要降级或跳过**。
+   **How to run**: as an embedded step in `/plan`, run all 5 checks defined in `prd-check.md` in full — same rules, output format, and blocking decisions. **Do not re-implement the check logic, and do not downgrade or skip it.**
 
-   **为什么单独抽成命令**:
-   - 用户审阅 PRD 过程中可以独立跑 `/prd-check @docs/prds/xxx.md` 实时自检, 不必非要跑 `/plan` 才知道哪里没改完
-   - `/plan` 和 `/prd-check` 共用同一份检查规则, 避免两处分叉
+   **Why it's a separate command**:
+   - Users can independently run `/prd-check @docs/prds/xxx.md` during PRD review for real-time self-checking without needing to run `/plan`
+   - `/plan` and `/prd-check` share the same check rules, avoiding divergence
 
-## 分析步骤
+## Analysis Steps
 
-1. **理解需求**: 通读 PRD, 列出所有功能点 + 业务规则
-2. **提取数据契约 + 一致性校验**: 读 PRD 的「数据契约」章节, 拿到 operationId 列表 + 状态 + 错误码映射
+1. **Understand requirements**: read the full PRD, list all feature points + business rules
+2. **Extract data contract + consistency validation**: read the PRD's "Data Contract" section, get operationId list + status + error code mappings
 
-   对每个 operationId 按状态分类校验:
+   For each operationId, validate by status:
 
-   | PRD 状态 | 校验逻辑 | 不通过时的动作 |
-   |---------|---------|---------------|
-   | ✅ 已存在 | 必须出现在 `workspace/api-spec/openapi.json` | 停下, 提醒拉取最新 openapi.json 或找后端确认 |
-   | 🆕 待后端实现 | 必须在 PRD「接口提议」章节有 stub, **或**已在 `workspace/api-spec/openapi.local.json` | 停下, 提醒补 stub / 评审 / 进 local.json |
-   | 无状态标注 | PRD 不规范 | 停下, 要求补齐状态列 |
+   | PRD Status | Validation Logic | On Failure |
+   |------------|------------------|------------|
+   | ✅ Already exists | Must appear in `workspace/api-spec/openapi.json` | Stop, remind user to fetch latest openapi.json or confirm with backend |
+   | 🆕 Pending backend implementation | Must have a stub in PRD's "API Proposals" section, **or** already in `workspace/api-spec/openapi.local.json` | Stop, remind user to add stub / review / add to local.json |
+   | No status annotation | PRD is non-conformant | Stop, require user to fill in the status column |
 
-   - 如果 PRD 完全缺少数据契约 → **停下提醒用户先走 `/prd` 补上**, 不要凭空编接口
-   - 🆕 接口 stub 评审通过后, 有两条路径:
-     - **推荐**: 合并进主 `openapi.json` (由后端或前端推 PR)
-     - **兜底**: 进 `workspace/api-spec/openapi.local.json`, 供前端本地开发, 后端实现后移除
-3. **识别复用**: 检查 CLAUDE.md 中的已有组件库, 标注哪些可以复用
-4. **拆解任务**: 将需求拆解为具体的开发任务, **每个任务必须关联到一个 PRD 锚点**
+   - If PRD is completely missing the data contract → **stop and remind the user to run `/prd` to add it** — do not fabricate API definitions
+   - Once a 🆕 API stub is reviewed, there are two paths:
+     - **Recommended**: merge into the main `openapi.json` (via backend or frontend PR)
+     - **Fallback**: put into `workspace/api-spec/openapi.local.json` for local frontend dev; remove after backend implements it
 
-### 任务拆解的强制顺序
+3. **Identify reuse opportunities**: check the component library noted in CLAUDE.md, mark what can be reused
+4. **Break down tasks**: decompose requirements into specific development tasks, **each task must reference a PRD anchor**
 
-每个功能点必须按以下顺序产出任务 (依赖链清晰, 便于并行/分批):
+### Mandatory Task Order
+
+For each feature point, produce tasks in this order (clear dependency chain, supports parallel/batched work):
 
 ```
-gen:api    (跑一次, 确保类型最新)  ← 命令: pnpm gen:api, 产物: workspace/src/types/api.ts
+gen:api    (run once to ensure types are up to date)  ← command: pnpm gen:api, output: workspace/src/types/api.ts
    ↓
-api        (请求函数)              ← 类型从 workspace/src/types/api.ts import, 不要手写
+api        (request functions)                         ← types imported from workspace/src/types/api.ts, never hand-written
    ↓
-mock       (假数据)                ← 类型从 workspace/src/types/api.ts import, 后端没好时用
+mock       (fake data)                                 ← types from workspace/src/types/api.ts, for use before backend is ready
    ↓
-store/hook (状态管理)              ← 来源: PRD 业务规则
+store/hook (state management)                          ← sourced from: PRD business rules
    ↓
-component  (UI 组件)               ← 来源: PRD 业务规则
+component  (UI components)                             ← sourced from: PRD business rules
    ↓
-page       (页面装配)              ← 来源: PRD 交互流程
+page       (page assembly)                             ← sourced from: PRD interaction flows
 ```
 
-### API 类型的硬性规则
+### Hard Rules for API Types
 
-- ❌ **不要手写** request/response 类型, 一律从 `@/types/api` 取
-- ❌ **不要在任务里产出 `api-type` 类的手写类型文件**, 用 OpenAPI 生成的就够
-- ✅ api 函数的入参/出参类型直接 `import type { paths } from '@/types/api'` 提取
-- ✅ 如果发现 OpenAPI 缺字段, 在任务清单顶层加一条 `blocked` 任务: 「推动后端更新 OpenAPI: <缺什么>」, 不要硬编
+- ❌ **Never hand-write** request/response types — always import from `@/types/api`
+- ❌ **Never produce `api-type` style hand-written type files** in tasks — OpenAPI-generated types are sufficient
+- ✅ For api function input/output types, use `import type { paths } from '@/types/api'` directly
+- ✅ If OpenAPI is missing a field, add a `blocked` task at the top of the task list: "Push backend to update OpenAPI: <what's missing>" — do not hardcode workarounds
 
-## 输出格式
+## Output Format
 
-请以 JSON 格式输出任务清单:
+Output the task list in JSON format:
 
 ```json
 {
-  "moduleName": "模块名称",
+  "moduleName": "Module Name",
   "moduleCode": "user-list",
   "prdRef": "docs/prds/user-list.md",
-  "summary": "一句话概括这个模块做什么",
-  "createdAt": "生成日期",
+  "summary": "One-sentence summary of what this module does",
+  "createdAt": "generation date",
   "tasks": [
     {
       "taskId": "T001",
       "type": "precondition | gen-api | api | mock | constants | utils | locale | config | model | store | hook | wrapper | component | page",
-      "name": "文件名称",
+      "name": "file name",
       "filePath": "workspace/src/features/xxx/xxx.ts",
-      "description": "具体实现要求",
-      "prdRef": "docs/prds/user-list.md#搜索表单",
-      "designRef": "Figma: <URL>#Frame-SearchForm 或 docs/designs/search-form.png 或空",
+      "description": "Specific implementation requirements",
+      "prdRef": "docs/prds/user-list.md#search-form",
+      "designRef": "Figma: <URL>#Frame-SearchForm or docs/designs/search-form.png or empty",
       "businessRules": [
-        "手机号格式不合法时, 表单实时显示错误提示, 搜索按钮禁用",
-        "所有字段为空时, 搜索按钮禁用",
-        "重置按钮清空字段后, 自动触发一次查询"
+        "When phone number format is invalid, show real-time error and disable the search button",
+        "When all fields are empty, disable the search button",
+        "After reset clears all fields, automatically trigger one query"
       ],
       "props": {},
-      "dependencies": ["依赖的其他 taskId"],
-      "reuseComponents": ["可复用的已有组件"],
-      "acceptanceCriteria": ["验收条件1", "验收条件2"],
+      "dependencies": ["other taskIds this depends on"],
+      "reuseComponents": ["existing reusable components"],
+      "acceptanceCriteria": ["acceptance criterion 1", "acceptance criterion 2"],
       "status": "pending"
     }
   ],
   "routeConfig": {
     "path": "/xxx",
-    "layout": "使用哪个布局"
+    "layout": "which layout to use"
   },
-  "dataFlow": "简述数据流向"
+  "dataFlow": "brief description of data flow"
 }
 ```
 
-### 字段说明
+### Field Descriptions
 
-| 字段 | 必填 | 来源 | 用途 |
-|------|------|------|------|
-| `prdRef` (顶层) | ✅ | 输入的 PRD 路径 | 整个模块的 PRD 入口 |
-| `task.prdRef` | ✅ | PRD 二级标题锚点 | 编码时写入源文件 `@prd` JSDoc |
-| `task.designRef` | ❌ | PRD「设计稿」章节的帧映射 | 编码时写入源文件 `@design` JSDoc, 无设计稿留空 |
-| `task.businessRules` | ✅ | PRD「业务规则」���节原文 | 编码时���入源文件 `@rules` JSDoc, **必须照抄不要改��** |
-| `task.acceptanceCriteria` | ✅ | businessRules 的具体化 (含技术细节) | 编码完成自检, 可包含 UI/性能/兼容性等技术要求 |
+| Field | Required | Source | Purpose |
+|-------|----------|--------|---------|
+| `prdRef` (top-level) | ✅ | Input PRD path | PRD entry for the entire module |
+| `task.prdRef` | ✅ | PRD H2 heading anchors | Written into source file `@prd` JSDoc during coding |
+| `task.designRef` | ❌ | Frame mapping from PRD "Design" section | Written into source file `@design` JSDoc; leave empty if no design spec |
+| `task.businessRules` | ✅ | Verbatim text from PRD "Business Rules" section | Written into source file `@rules` JSDoc — **must be copied verbatim, no paraphrasing** |
+| `task.acceptanceCriteria` | ✅ | Concrete version of businessRules (includes technical details) | Self-check after coding; may include UI/performance/compatibility requirements |
 
-**businessRules vs acceptanceCriteria 的区别**:
-- `businessRules` = 业务语义, 与实现无关 (例: "字段全空时按钮禁用")
-- `acceptanceCriteria` = 技术验收, 含实现要求 (例: "禁用时按钮 disabled=true 且 className 含 ant-btn-disabled")
+**businessRules vs acceptanceCriteria distinction**:
+- `businessRules` = business semantics, implementation-agnostic (e.g., "disable button when all fields empty")
+- `acceptanceCriteria` = technical acceptance, includes implementation requirements (e.g., "disabled button has disabled=true and className includes ant-btn-disabled")
 
-## 要求
+## Requirements
 
-- 按依赖顺序排列任务 (api → store → hooks → components → page)
-- 每个组件必须明确 Props 接口
-- 标注哪些已有组件可以复用
-- 每个任务都要有 `prdRef` + `businessRules` + `acceptanceCriteria` 三件套
-- 边界场景必须考虑: 空状态、加载中、错误、权限不足
-- `businessRules` 必须从 PRD 原文摘抄, 不得自创
+- List tasks in dependency order (api → store → hooks → components → page)
+- Each component must have an explicit Props interface
+- Note which existing components can be reused
+- Every task must have the three-part requirement: `prdRef` + `businessRules` + `acceptanceCriteria`
+- Edge cases must be considered: empty state, loading, error, insufficient permissions
+- `businessRules` must be extracted verbatim from the PRD — no improvisation
 
-## 输出方式
+## Output Method
 
-1. 先在终端中输出完整的任务清单供我预览
-2. 然后将任务清单保存到本地文件: docs/tasks/tasks-[模块代号]-[当天日期].json
-3. 如果 docs/tasks/ 目录不存在, 请先创建
-4. **额外提示**: 编码阶段需把 `prdRef` 写入源文件 `@prd`, 把 `businessRules` 写入源文件 `@rules` (见 `.claude/rules/file-docs.md`)
+1. First, output the complete task list in the terminal for preview
+2. Then save the task list to a local file: `docs/tasks/tasks-[module-code]-[today's date].json`
+3. If `docs/tasks/` does not exist, create it first
+4. **Additional note**: during the coding phase, write `prdRef` into the source file's `@prd` and write `businessRules` into the source file's `@rules` (see `.claude/rules/file-docs.md`)
 
-需求如下:
+Requirements are as follows:
 $ARGUMENTS

@@ -1,187 +1,187 @@
-你现在是 bug 分诊 + 规范化器。对输入的 bug 描述执行三件事:
+You are now a bug triage + normalizer. For the given bug description, perform three tasks:
 
-1. **分诊**: 判断是真 bug 还是 feature / 漏规则 (后者不应进入 `/fix`)
-2. **规范化**: 把输入固化为符合 `docs/bug-reports/_template.md` 的结构化报告
-3. **校验**: 报告字段齐不齐、锚点有没有、是否含违规内容
+1. **Triage**: Determine whether this is a real bug or a feature request / missing rule (the latter should not enter `/fix`)
+2. **Normalize**: Solidify the input into a structured report conforming to `docs/bug-reports/_template.md`
+3. **Validate**: Check if all required fields are present, anchors exist, and no forbidden content is included
 
-下游 `/fix` 永远只吃「本命令产出的规范报告」, 保持输入契约单一。
+Downstream `/fix` always only accepts "normalized reports produced by this command" — keeping the input contract single.
 
-## 适用场景
+## Applicable Scenarios
 
-1. **用户审阅 bug 报告实时自检** — 测试端 AI 写完 / 人工整理完跑 `/bug-check @docs/bug-reports/xxx.md` 验格式
-2. **`/fix` 命令的前置校验 (强制)** — `/fix` 执行前必须先跑本命令, 不通过不进入修复
-3. **口头描述 bug 的固化入口** — `/fix <一句话>` 会先转给本命令固化成报告, 落盘后让人 review
+1. **User self-checks a bug report in real time** — after a testing AI or manual review writes one, run `/bug-check @docs/bug-reports/xxx.md` to validate format
+2. **Mandatory pre-check for `/fix`** — `/fix` must run this command first; if it fails, do not enter the fix phase
+3. **Entry point to solidify verbally described bugs** — `/fix <one-liner>` will first delegate to this command to solidify a report, write it to disk, then let the user review it
 
-## 输入
+## Input
 
-| 输入 | 模式 | 行为 |
-|------|------|------|
-| `@docs/bug-reports/xxx.md` | 批量 | 只校验, 不重写 |
-| 自由文本 (一句话 / 报错堆栈 / 复现描述) | 交互 | 反问补齐 → 固化到文件 → 停下让用户 review |
-| 不带参数 | — | 停下询问: 「请描述 bug, 或指定报告路径」 |
+| Input | Mode | Behavior |
+|-------|------|----------|
+| `@docs/bug-reports/xxx.md` | Batch | Validate only, do not rewrite |
+| Free text (one-liner / error stack / repro description) | Interactive | Ask follow-up questions → solidify to file → stop for user review |
+| No arguments | — | Stop and ask: "Please describe the bug or specify a report path" |
 
-## 第一步: 分诊 (bug vs 漏规则 vs feature)
+## Step 1: Triage (bug vs. missing rule vs. feature)
 
-**核心判断**: 用户描述的「期望行为」是否在 PRD 里已经定义?
+**Core question**: Is the "expected behavior" described by the user already defined in the PRD?
 
-1. 从输入提取关键词 (模块 / 功能 / 动作 / 期望结果)
-2. grep `docs/prds/` 找最相关的 PRD 文件, 再在文件里找「业务规则」章节
-3. 按下表分流:
+1. Extract keywords from the input (module / feature / action / expected result)
+2. grep `docs/prds/` to find the most relevant PRD, then look for the "Business Rules" section
+3. Route based on the table below:
 
-| 情况 | 判定 | 动作 |
-|------|------|------|
-| 描述含「加个 / 增加 / 我想要 / 支持 XX 功能」 | feature request | 停, 提示 `/prd <描述>`, 不进入 /fix |
-| PRD 里有明确业务规则, 代码实现不符 | ✅ 真 bug | 进入第二步 |
-| PRD 没覆盖此场景 (超时 / 异常 / 新边界) | 漏规则, 不是 bug | 停, 提示「先跑 `/prd` 补规则, 通过 `/prd-check` 后重跑 `/plan` 生成任务, 最后 `/code` 实现」 |
-| PRD 有规则但模糊, 多种解读 | 不明确 | 交互模式停下问 PM; headless 输出 `[BLOCKED]` 列出候选解读 |
+| Situation | Verdict | Action |
+|-----------|---------|--------|
+| Description contains "add / increase / I want / support XX feature" | Feature request | Stop, suggest `/prd <description>`, do not enter /fix |
+| PRD has a clear business rule, but code implementation does not match | ✅ Real bug | Proceed to Step 2 |
+| PRD does not cover this scenario (timeout / exception / new boundary) | Missing rule, not a bug | Stop, suggest "run `/prd` to add the rule first, then `/prd-check`, then `/plan`, then `/code`" |
+| PRD has a rule but it's ambiguous, multiple interpretations | Unclear | In interactive mode, stop and ask PM; in headless mode, output `[BLOCKED]` listing candidate interpretations |
 
-**关键区分**: 「代码没实现 PRD 有的规则」= bug; 「代码没覆盖 PRD 没提的场景」= 漏规则, 走 `/prd`, 不走 `/fix`。
+**Key distinction**: "Code doesn't implement a rule that PRD has" = bug; "Code doesn't cover a scenario that PRD doesn't mention" = missing rule → use `/prd`, not `/fix`.
 
-分诊不通过直接终止, 不进入第二步。
+Triage failure terminates immediately — do not proceed to Step 2.
 
-## 第二步: 规范化 (按输入类型分支)
+## Step 2: Normalize (branching by input type)
 
-### 2A. 输入是报告文件 (批量模式, 只校验不重写)
+### 2A. Input is a report file (batch mode — validate only, do not rewrite)
 
-对文件依次跑以下检查, 全部跑完一次性汇总 (不短路):
+Run the following checks on the file in sequence, collect all results before summarizing (no short-circuit):
 
-| 检查项 | 判定标准 | 不通过时 |
-|-------|---------|---------|
-| 元信息字段齐全 | 报告 ID / 创建日期 / 测试工具 / 测试范围 均非空 | 列缺失字段 |
-| 概览表非空 | 至少 1 行 Bug 记录 | 阻塞 (无法分组) |
-| 每个 Bug 必填字段 | 优先级 / 模块 / 现象 / 复现步骤 / 期望 vs 实际 全部填实 | 列出哪个 Bug 缺哪项 |
-| 优先级取值合法 | 只能是 P0 / P1 / P2 | 列非法值 |
-| 关联 PRD 可追溯 (软) | 路径文件存在, 且锚点能在文件里 grep 到 | 软警告, 不阻塞 (允许空) |
-| 无 `[待补齐]` | 全文 grep 命中为 0 | 列位置, 阻塞 |
-| 无违规的「修复代码建议」 | 不出现 "建议代码:" / "可以这样改:" / 代码块形式的 fix | 列位置, 阻塞 (违反 `docs/bug-reports/README.md` 边界) |
-| `[AI 推测]` 扫描 | 软警告, 让 review 者知道哪些是 AI 猜的 | 不阻塞 |
+| Check | Pass Criteria | On Failure |
+|-------|---------------|------------|
+| Metadata fields complete | Report ID / created date / test tool / test scope all non-empty | List missing fields |
+| Summary table non-empty | At least 1 bug record | Blocked (cannot group) |
+| Required fields per bug | Priority / module / symptom / repro steps / expected vs. actual all filled | List which bug is missing which field |
+| Valid priority values | Only P0 / P1 / P2 | List invalid values |
+| PRD anchor traceable (soft) | Path file exists and anchor can be grepped in the file | Soft warning, non-blocking (empty allowed) |
+| No `[TBD]` remaining | Zero grep hits across the file | List locations, blocking |
+| No forbidden "fix code suggestions" | No "Suggested code:" / "You can fix it by:" / code blocks as fix | List locations, blocking (violates `docs/bug-reports/README.md` boundary) |
+| `[AI Inference]` scan | Soft warning, lets reviewers know what the AI guessed | Non-blocking |
 
-### 2B. 输入是自由文本 (交互模式, 需固化)
+### 2B. Input is free text (interactive mode — must be solidified)
 
-反问 → 固化 → 停下让用户 review, **不要自动进入 `/fix`**。
+Ask follow-up questions → solidify → stop for user review. **Do not automatically proceed to `/fix`**.
 
-**步骤**:
+**Steps**:
 
-1. **定文件路径**:
-   - 从描述推模块名 (例: 关键词「登录」→ `login`)
-   - 拼 `docs/bug-reports/<YYYY-MM-DD>-<module>.md`
-   - 同日同模块已存在 → 加 `-2` / `-3` 后缀
+1. **Determine file path**:
+   - Infer module name from the description (e.g., keyword "login" → `login`)
+   - Compose `docs/bug-reports/<YYYY-MM-DD>-<module>.md`
+   - If same-day, same-module file already exists → append `-2` / `-3` suffix
 
-2. **一次性反问** (不要逐条问):
+2. **Ask all follow-up questions at once** (do not ask one by one):
 
-   先把能推断的先推断好, 再列出缺失项一次性问完:
+   First infer what you can, then list missing items to ask all at once:
 
    ```
-   已从描述推测 (若不对请直接改):
+   Inferred from description (correct these if wrong):
      Bug ID: B001
-     优先级: P0 [AI 推测: 关键词"白屏"通常是阻塞]
-     模块: login [AI 推测: 关键词"登录页"]
-     关联 PRD: docs/prds/login.md#账号密码登录 [AI 推测: 锚点语义匹配]
+     Priority: P0 [AI Inference: keyword "blank screen" is usually blocking]
+     Module: login [AI Inference: keyword "login page"]
+     Related PRD: docs/prds/login.md#account-password-login [AI Inference: semantic match]
 
-   请一次性补齐 (不清楚写"无"):
-     1. 复现 URL? (例: /login)
-     2. 前置条件? (账号 / 浏览器状态 / 数据前置)
-     3. 复现步骤? (编号有序, 每步一件事)
-     4. 期望行为 / 实际行为?
-     5. 控制台报错原文 (若有)?
-     6. 相关接口名 + 异常 (若知道)?
+   Please fill in the following at once (write "N/A" if unknown):
+     1. Repro URL? (e.g., /login)
+     2. Preconditions? (account / browser state / data setup)
+     3. Repro steps? (numbered, one action per step)
+     4. Expected behavior / actual behavior?
+     5. Raw console error (if any)?
+     6. Related API name + exception (if known)?
    ```
 
-3. **组装文件** (严格按 `docs/bug-reports/_template.md`):
-   - 能推断的字段写入, 保留 `[AI 推测]` 前缀
-   - 用户未补的非必填字段 (控制台 / 网络 / 截图) 填「无」
-   - 必填字段 (复现 / 期望 vs 实际) 用户没给 → **不落盘, 停下再次追问**
+3. **Assemble the file** (strictly follow `docs/bug-reports/_template.md`):
+   - Fill in inferable fields, retain `[AI Inference]` prefix
+   - For optional unfilled fields (console / network / screenshot) → write "N/A"
+   - For required unfilled fields (repro / expected vs. actual) → **do not write to disk, stop and ask again**
 
-4. **落盘并停下**:
+4. **Write to disk and stop**:
 
-   写完文件后**必须停**, 不要继续执行 `/fix`:
+   After writing the file, **must stop** — do not continue to `/fix`:
 
    ```
-   ✅ 已固化 bug 报告: docs/bug-reports/2026-04-16-login.md
+   ✅ Bug report solidified: docs/bug-reports/2026-04-16-login.md
 
-   AI 推测项 (3 处, 需你 review):
-     L15  优先级 P0
-     L16  模块 login
-     L18  关联 PRD docs/prds/login.md#账号密码登录
+   AI Inference items (3 locations, need your review):
+     L15  Priority P0
+     L16  Module login
+     L18  Related PRD docs/prds/login.md#account-password-login
 
-   下一步 (二选一):
-     • 确认无误 → /fix @docs/bug-reports/2026-04-16-login.md [--pr]
-     • 需修正 → 直接编辑文件后重跑上面的命令
+   Next steps (choose one):
+     • Confirmed correct → /fix @docs/bug-reports/2026-04-16-login.md [--pr]
+     • Need corrections → edit the file directly and rerun the command above
    ```
 
-## 输出格式
+## Output Format
 
-### 通过 (批量模式)
-
-```
-✅ bug-check 通过: docs/bug-reports/2026-04-16-login.md
-
-  ✅ 分诊: 3 个 bug 均为真 bug (均有 PRD 业务规则支撑)
-  ✅ 元信息齐全 / 概览表非空
-  ✅ 必填字段完整 (3 个 Bug)
-  ✅ 优先级合法 (P0=1 P1=1 P2=1)
-  ✅ 无 [待补齐] / 无修复代码建议
-
-软警告 (不阻塞):
-  • B003 「关联 PRD」留空 (允许, 但建议补上便于 /fix 对齐规则)
-  • 3 处 [AI 推测]: L15, L16, L18 — 如是测试端 AI 产出请人工 review
-
-下一步: /fix @docs/bug-reports/2026-04-16-login.md [--pr]
-```
-
-### 通过 (交互模式固化完成)
-
-见第二步 2B.4 的落盘输出。
-
-### 不通过 (分诊)
+### Passed (batch mode)
 
 ```
-❌ bug-check 终止: 判定不是真 bug
+✅ bug-check passed: docs/bug-reports/2026-04-16-login.md
 
-[分诊] 命中关键词「加一个 / 我想要」, 分类为 feature request
-  建议走: /prd "<原始描述>"
+  ✅ Triage: 3 bugs are all real bugs (all backed by PRD business rules)
+  ✅ Metadata complete / summary table non-empty
+  ✅ Required fields complete (3 bugs)
+  ✅ Priority values valid (P0=1 P1=1 P2=1)
+  ✅ No [TBD] / no fix code suggestions
 
-或
+Soft warnings (non-blocking):
+  • B003 "Related PRD" is empty (allowed, but recommended for /fix alignment)
+  • 3 [AI Inference] locations: L15, L16, L18 — if from a testing AI, please review manually
 
-[分诊] 期望行为「网络超时后自动重试」在 docs/prds/login.md 里找不到对应业务规则
-  判定: PRD 漏规则, 不是代码 bug
-  建议流程:
-    1. /prd docs/prds/login.md  (补上超时规则)
+Next step: /fix @docs/bug-reports/2026-04-16-login.md [--pr]
+```
+
+### Passed (interactive mode — solidification complete)
+
+See the disk write output in Step 2B.4.
+
+### Failed (triage)
+
+```
+❌ bug-check terminated: not a real bug
+
+[Triage] Matched keywords "add / I want", classified as feature request
+  Suggested path: /prd "<original description>"
+
+or
+
+[Triage] Expected behavior "auto-retry on network timeout" has no matching business rule in docs/prds/login.md
+  Verdict: Missing PRD rule, not a code bug
+  Suggested flow:
+    1. /prd docs/prds/login.md  (add timeout rule)
     2. /prd-check @docs/prds/login.md
     3. /plan @docs/prds/login.md
     4. /code @docs/tasks/tasks-login-*.json
 ```
 
-### 不通过 (字段校验)
+### Failed (field validation)
 
 ```
-❌ bug-check 未通过: docs/bug-reports/2026-04-16-login.md
+❌ bug-check failed: docs/bug-reports/2026-04-16-login.md
 
-阻塞问题:
+Blocking issues:
 
-[检查: 必填字段]  缺 3 项
-  Bug B001: 缺「期望 vs 实际」
-  Bug B002: 缺「复现步骤」
-  Bug B003: 优先级值为「紧急」, 应为 P0/P1/P2
+[Check: Required fields]  3 missing
+  Bug B001: missing "Expected vs. Actual"
+  Bug B002: missing "Repro steps"
+  Bug B003: Priority value is "Urgent", should be P0/P1/P2
 
-[检查: 修复建议代码]  命中 1 处
-  L87  "建议代码: return await retry(() => fetchUser())"
-  测试端 AI 不应给修复方案, 让 /fix 自己想
+[Check: Fix code suggestions]  1 hit
+  L87  "Suggested code: return await retry(() => fetchUser())"
+  Testing AI should not provide fix suggestions — let /fix figure that out
 
-已通过 (4/7):
-  ✅ 元信息 / 概览表 / 锚点 / [待补齐]
+Passed (4/7):
+  ✅ Metadata / summary table / anchors / [TBD]
 
-修完重跑: /bug-check @docs/bug-reports/2026-04-16-login.md
+Fix and rerun: /bug-check @docs/bug-reports/2026-04-16-login.md
 ```
 
-## 设计原则
+## Design Principles
 
-- **分诊优先**: 不是真 bug 一律不进入 `/fix`, 避免白费修复算力
-- **不改源码 / 不改 PRD**: 只读 + 只写 bug 报告文件
-- **批量只校验**: 尊重测试端 AI / 人工的产出, 不重写已有报告
-- **交互必须落盘**: 口头 bug 统一转成报告文件, 和批量一视同仁, 便于追溯
-- **落盘后停**: 和 `/prd` 草稿流程一致, 让用户 review 再进入下一步
-- **输入契约单一**: `/fix` 下游只接「规范报告」, 不处理裸文本
+- **Triage first**: Non-real bugs never enter `/fix`, avoiding wasted fix compute
+- **Do not modify source code or PRD**: Read-only + write to bug report files only
+- **Batch mode validates only**: Respect output from testing AI / manual review, do not rewrite existing reports
+- **Interactive mode must write to disk**: Verbal bugs are always converted to report files, treated the same as batch, for traceability
+- **Stop after writing to disk**: Consistent with `/prd` draft flow — let the user review before proceeding
+- **Single input contract**: `/fix` downstream only accepts "normalized reports", not raw text
 
-需求如下:
+Requirements are as follows:
 $ARGUMENTS

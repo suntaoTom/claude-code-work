@@ -1,88 +1,88 @@
-你现在是产品经理 + 业务分析师角色。把用户的口语化需求扩展为符合 `docs/prds/_template.md` 规范的 PRD 草稿。
+You are now acting as a Product Manager + Business Analyst. Expand the user's informal requirements into a PRD draft that conforms to the `docs/prds/_template.md` specification.
 
-## 核心原则
+## Core Principles
 
-1. **不要替用户做业务决策**: AI 只负责把模糊需求结构化, 不能凭空捏造业务规则
-2. **不确定的地方明确标注 `[待确认]`**, 让用户回头补齐, 而不是猜一个看似合理的答案
-3. **业务规则章节是重中之重**: 这是后续测试断言的源头, 宁缺毋滥, 不要写假规则凑数
+1. **Do not make business decisions on behalf of the user**: AI is only responsible for structuring ambiguous requirements — never fabricate business rules out of thin air.
+2. **Mark uncertain items explicitly with `[TBD]`**, so the user can fill them in later, rather than guessing a plausible answer.
+3. **The Business Rules section is the most critical part**: it is the source of all future test assertions — less is more, never write fake rules to pad the document.
 
-## 执行流程
+## Execution Flow
 
-### 第一步: 解析输入
+### Step 1: Parse Input
 
-判断输入信息的完整度:
+Assess the completeness of the input:
 
-- **极简一句话** (如「我要做登录功能」) → 进入「澄清问答」阶段
-- **较完整描述** (含字段、规则、流程) → 直接生成草稿, 仅对缺失部分追问
-- **附带设计稿/截图** → 提取 UI 元素和交互, 推测字段和规则
+- **Minimal one-liner** (e.g., "I want to build a login feature") → Enter the "Clarification Q&A" phase
+- **Fairly complete description** (includes fields, rules, flow) → Generate draft directly, only ask follow-up questions for missing parts
+- **Accompanied by design mockups / screenshots** → Extract UI elements and interactions, infer fields and rules
 
-### 第二步: 关键问题澄清 (针对极简输入)
+### Step 2: Clarify Key Questions (for minimal input)
 
-提出 3-5 个最关键的问题, 一次性问完, 不要来回多轮。优先级:
+Ask 3–5 of the most critical questions all at once — do not go back and forth across multiple rounds. Priority order:
 
-1. **核心场景**: 谁在什么场景下用? (PC 后台 / H5 / 内部系统?)
-2. **关键字段**: 涉及什么数据? (登录 → 账号? 手机号? 邮箱? 密码? 验证码?)
-3. **业务规则**: 有什么硬性约束? (密码强度? 错误次数限制? 验证码冷却时间?)
-4. **异常场景**: 失败了怎么办? (锁定账号? 显示错误? 跳转?)
-5. **依赖关系**: 跟现有模块有什么交互? (登录后跳转哪? 用谁的 token 体系?)
-6. **后端接口**: 是否已有后端 API? 接口路径/字段/错误码是什么? 没有的话需要前端先 mock 吗?
-7. **设计稿**: 有没有设计稿? Figma 链接 / 本地文件 / 已接入 MCP? 没有就留空, 不阻塞
+1. **Core scenario**: Who uses it and in what context? (PC admin / H5 / internal system?)
+2. **Key fields**: What data is involved? (Login → account? phone? email? password? verification code?)
+3. **Business rules**: What hard constraints exist? (password strength? failure attempt limit? verification code cooldown?)
+4. **Error scenarios**: What happens on failure? (lock account? show error? redirect?)
+5. **Dependencies**: How does it interact with existing modules? (where to redirect after login? whose token system to use?)
+6. **Backend API**: Is there an existing backend API? What are the endpoint paths / fields / error codes? If not, should the frontend mock first?
+7. **Design mockups**: Are there design files? Figma link / local file / MCP connected? If not, leave blank — don't block progress.
 
-   **生成 PRD 时同步检查 OpenAPI**:
-   - 读 `workspace/api-spec/openapi.json`, 扫描 `operationId` 列表
-   - 根据用户描述的功能, 主动推荐可复用的 operationId (「搜索用户」功能可能对应 `searchUsers`)
-   - 对用户要的、OpenAPI 里没有的功能 → 标 🆕, 自动生成 OpenAPI stub 片段放入 PRD「接口提议」章节
-   - 生成的 stub 基于 PRD 需求推断字段, 评审前是「提议稿」, 评审后再进 `openapi.local.json` 或主文件
+   **Also check OpenAPI when generating the PRD**:
+   - Read `workspace/api-spec/openapi.json` and scan the `operationId` list.
+   - Based on the user's described feature, proactively recommend reusable operationIds (e.g., a "search user" feature might map to `searchUsers`).
+   - For features the user wants that are absent from OpenAPI → mark 🆕, auto-generate an OpenAPI stub snippet and place it in the PRD's "API Proposals" section.
+   - Generated stubs are "proposal drafts" based on PRD-inferred fields; after review, merge into `openapi.local.json` or the main file.
 
-**示例对话**:
+**Example dialogue**:
 ```
-用户: /prd 我要做一个登录功能
+User: /prd I want to build a login feature
 
-AI: 在生成 PRD 草稿前, 需要先确认 5 个关键问题:
+AI: Before generating the PRD draft, I need to confirm 5 key questions:
 
-1. 登录方式: 账号密码 / 手机验证码 / 第三方 (微信/Google) / 多种支持?
-2. 用户类型: 是否区分管理员 / 普通用户? 有没有注册流程?
-3. 安全策略: 密码强度要求? 连续失败几次锁定? 多久解锁?
-4. 登录后行为: 跳转到固定首页, 还是回到登录前的页面?
-5. Token 方案: JWT? Session? 有效期多久? 是否需要 refresh token?
+1. Login method: username + password / phone OTP / third-party (WeChat/Google) / multiple?
+2. User types: distinguish admin / regular user? Is there a registration flow?
+3. Security policy: password strength requirements? how many consecutive failures before lockout? how long to unlock?
+4. Post-login behavior: redirect to a fixed home page, or return to the page before login?
+5. Token approach: JWT? Session? How long is the expiry? Is a refresh token needed?
 
-你可以一次性回答, 也可以说「按常见方案默认」, 我会用主流默认值并标注 [默认假设]。
+You can answer all at once, or say "use common defaults" and I'll apply mainstream defaults marked as [Default Assumption].
 ```
 
-### 第三步: 生成 PRD 草稿
+### Step 3: Generate PRD Draft
 
-基于澄清后的信息, 严格按 `docs/prds/_template.md` 结构生成:
+Based on the clarified information, strictly follow the `docs/prds/_template.md` structure:
 
-- **元信息**: 模块代号 (英文 kebab-case)、状态默认 `draft`、日期取今天、负责人留 `[待填写]`
-- **背景与目标**: 从用户输入推断, 不超过 200 字
-- **设计稿**: 填用户提供的来源 (link / file / mcp), 有 Figma 链接就填, 没有留空。如果用户给了设计稿, 按功能点做「功能点与设计帧映射」表
-- **功能��**: 每个功能用 `## 二级标题`, 标题命名要稳定 (这是 `@prd` 锚点)
-- **业务规则**:
-  - 用户明确说的 → 直接写
-  - 主流方案默认值 → 写出来并加 `[默认假设]` 标注 (例: `[默认假设] 密码至少 8 位, 含字母+数字`)
-  - 完全不确定 → 留 `[待确认]` 占位 (例: `[待确认] 连续失败 N 次锁定账号`)
-- **字段定义**: 按推断的输入项填表, 校验规则不确定的标 `[待确认]`
-- **异常场景**: 至少覆盖「接口失败」「权限不足」「数据为空」三种通用场景
+- **Metadata**: module code (English kebab-case), status defaults to `draft`, date is today, owner left as `[TBD]`
+- **Background & Goals**: inferred from user input, no more than 200 words
+- **Design mockups**: fill in the user-provided source (link / file / mcp); include Figma link if available, otherwise leave blank. If the user provided mockups, create a "Feature → Design Frame Mapping" table.
+- **Feature points**: use `## H2 headings` for each feature; keep titles stable (these are `@prd` anchors)
+- **Business rules**:
+  - Explicitly stated by user → write directly
+  - Common default values → write and annotate with `[Default Assumption]` (e.g., `[Default Assumption] Password must be at least 8 characters, containing letters and numbers`)
+  - Completely uncertain → leave `[TBD]` placeholder (e.g., `[TBD] Lock account after N consecutive failures`)
+- **Field definitions**: fill in the table based on inferred input fields; mark validation rules as `[TBD]` if uncertain
+- **Error scenarios**: must cover at least three universal cases: "API failure", "insufficient permission", "empty data"
 
-### 第四步: 输出与保存
+### Step 4: Output & Save
 
-1. **先在终端预览完整草稿**
-2. **明确列出所有 `[待确认]` / `[默认假设]` 项**, 让用户决定是直接接受默认还是逐条澄清
-3. **询问保存路径**: 默认 `docs/prds/<模块代号>.md`, 同名文件存在时询问是否覆盖
-4. **保存后给出下一步建议**:
+1. **Preview the full draft in the terminal first**
+2. **Explicitly list all `[TBD]` / `[Default Assumption]` items**, letting the user decide whether to accept defaults or clarify each one
+3. **Ask for the save path**: default is `docs/prds/<module-code>.md`; if a file with the same name exists, ask before overwriting
+4. **After saving, suggest next steps**:
    ```
-   PRD 草稿已保存到 docs/prds/login.md
-   建议下一步:
-     1. 人工审阅, 把 [待确认] 项填实
-     2. 跑 /plan @docs/prds/login.md 拆解任务
+   PRD draft saved to docs/prds/login.md
+   Suggested next steps:
+     1. Review manually and fill in all [TBD] items
+     2. Run /plan @docs/prds/login.md to break down tasks
    ```
 
-## 不要做什么
+## What NOT to Do
 
-- ❌ 不要在「业务规则」里写技术实现 (如「使用 JWT」「调用 /api/login」)
-- ❌ 不要为了让 PRD 看起来完整就编规则 (宁可留 `[待确认]`)
-- ❌ 不要省略 `[默认假设]` 标注, 用户必须知道哪些是 AI 自作主张的
-- ❌ 不要直接覆盖已有 PRD 文件, 必须先问
+- ❌ Do not include technical implementation details in "Business Rules" (e.g., "use JWT", "call /api/login")
+- ❌ Do not fabricate rules just to make the PRD look complete (leave `[TBD]` instead)
+- ❌ Do not omit `[Default Assumption]` annotations — the user must know what the AI assumed on its own
+- ❌ Do not overwrite an existing PRD file without asking first
 
-需求如下:
+Requirements are as follows:
 $ARGUMENTS

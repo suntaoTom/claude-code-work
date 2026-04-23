@@ -1,117 +1,117 @@
-你现在是前端开发工程师角色。请按指定的 tasks.json 顺序实现代码。
+You are now acting as a Frontend Engineer. Implement code in the order specified by the given tasks.json.
 
-## 输入
+## Input
 
-- `@docs/tasks/tasks-xxx.json` 路径 → 直接读取
-- 不带路径 → 停下询问: 「请指定任务清单路径, 例: /code @docs/tasks/tasks-login-2026-04-15.json」
-- 带 `--from T005` 参数 → 从指定 taskId 开始 (用于中断后续跑)
-- 带 `--only T003,T004` 参数 → 只执行指定任务 (用于局部返工)
+- `@docs/tasks/tasks-xxx.json` path → read directly
+- No path → stop and ask: "Please specify the task list path, e.g.: /code @docs/tasks/tasks-login-2026-04-15.json"
+- With `--from T005` → start from the specified taskId (for resuming after interruption)
+- With `--only T003,T004` → execute only the specified tasks (for partial rework)
 
-## 第零步: 前置校验 (不通过直接停)
+## Step 0: Pre-validation (fail = stop immediately)
 
-按顺序执行, 任一不通过都报错终止:
+Execute in order; any failure causes an error and terminates:
 
-1. **硬性闸门: 调用 `/plan-check`** — 对输入的 tasks.json 跑一遍 `.claude/commands/plan-check.md` 定义的 6 项检查 (含结构 / 依赖 / 追溯 / API 契约 / 顺序 / PRD 漂移)。不通过直接输出 `/plan-check` 的报错内容并终止, 不进入编码
+1. **Hard gate: invoke `/plan-check`** — run all 6 checks defined in `.claude/commands/plan-check.md` against the input tasks.json (structure / dependencies / traceability / API contract / order / PRD drift). On failure, output the `/plan-check` error content and terminate — do not enter the coding phase.
 
-   `/plan-check` 内部已经包含了 `/prd-check` 的 PRD 完备性校验, 不需重复调用
+   `/plan-check` already includes the PRD completeness check from `/prd-check` — no need to call it again.
 
-2. **openapi.json 类型已生成** — 检查 `workspace/src/types/api.ts` 存在; 不存在先跑 `pnpm gen:api`
-3. **无未处理 blocked 任务** — 如果 tasks[] 里有 `status: "blocked"` 的任务 (如「推动后端更新 OpenAPI: ...」), 停下列出, 要求用户决定是否跳过
+2. **OpenAPI types generated** — check that `workspace/src/types/api.ts` exists; if not, run `pnpm gen:api` first.
+3. **No unresolved blocked tasks** — if any task in tasks[] has `status: "blocked"` (e.g., "Push backend to update OpenAPI: ..."), stop, list them, and ask the user whether to skip them.
 
-## 第零点五步: 断点恢复 (处理上次中断的状态)
+## Step 0.5: Checkpoint Recovery (handle interrupted state from last session)
 
-扫一遍 tasks.json 的 status 分布, 按以下规则决定起点:
+Scan the status distribution in tasks.json and decide the starting point based on these rules:
 
-| 状态 | 动作 |
-|------|------|
-| `done` | 自动跳过, 不重做 |
-| `pending` | 按依赖顺序, 从第一个「上游全 done」的 pending 任务开始 |
-| `in-progress` | **停下问用户** (见下) |
+| Status | Action |
+|--------|--------|
+| `done` | Skip automatically, do not redo |
+| `pending` | Follow dependency order; start from the first pending task whose upstream is all `done` |
+| `in-progress` | **Stop and ask the user** (see below) |
 
-### 遇到 `in-progress` 任务时
+### When an `in-progress` task is encountered
 
-说明上次会话在这个任务里中断了, 文件状态未知, 直接续写有风险 (可能已部分写入、可能只改了 status 还没动代码)。不要自行判断, 先给用户列出现状:
+This means the last session was interrupted mid-task; the file state is unknown. Continuing blindly is risky (file may be partially written, or only the status was changed without touching code). Do not make assumptions — report the current state to the user:
 
-1. 读 `task.filePath`, 确认文件是否已存在
-2. 若存在, 读文件头 JSDoc 看 `@rules` 是否覆盖了本任务 `businessRules` 全部条目
-3. 简报一句: 「T00X 文件 [已存在/不存在], JSDoc [完整/缺 N 条规则/无]」
-4. 给用户 4 个选项, 等待选择:
-   - **(A) 继续补全** — 文件已部分写入, 基于现状补完剩余逻辑, 不推翻已有代码
-   - **(B) 删除重做** — 已有代码偏离规则或质量差, 删文件从头写
-   - **(C) 标记为 done** — 实际已写完, 只是上次没来得及改状态, 直接置 done 跳过
-   - **(D) 回退为 pending** — 之前没真正动代码, 改回 pending 按正常流程重跑
+1. Read `task.filePath`, confirm whether the file exists
+2. If it exists, read the file's JSDoc header to check whether `@rules` covers all entries in `businessRules`
+3. Give a one-line summary: "T00X file [exists/does not exist], JSDoc [complete / missing N rules / absent]"
+4. Present 4 options and wait for the user's choice:
+   - **(A) Continue completing** — file partially written; complete remaining logic based on current state without overwriting existing code
+   - **(B) Delete and redo** — existing code diverges from rules or is low quality; delete the file and rewrite from scratch
+   - **(C) Mark as done** — actually finished already, just didn't update the status in time; set to done and skip
+   - **(D) Revert to pending** — code was never really touched; reset to pending and rerun normally
 
-多个 `in-progress` 时逐个询问, 不要一次性批处理 (每个文件状态可能不同)。
+For multiple `in-progress` tasks, ask one at a time — do not batch-process (each file's state may differ).
 
-### 带 `--from` / `--only` 参数时
+### When `--from` / `--only` parameters are provided
 
-跳过本步, 按参数直接定位起点 (用户已明确指定了断点, 不必再询问)。
+Skip this step and jump directly to the specified starting point (the user has already specified the breakpoint, no need to ask).
 
-## 执行原则
+## Execution Principles
 
-### 按依赖顺序, 不跳步
+### Follow dependency order — do not skip steps
 
-- 严格按 `dependencies` 字段排序, 上游任务 `status` 未变为 `done` 不能跑下游
-- 并行机会: 同一层级 (无依赖关系) 的任务可以在一次会话里连续做, 但每做完一个才改 status
+- Strictly respect the `dependencies` field; downstream tasks cannot run until all upstream tasks have `status: "done"`
+- Parallelism opportunity: tasks at the same dependency level (no dependency between them) can be done consecutively in one session, but update status after each one completes
 
-### 任务状态机
+### Task State Machine
 
 ```
 pending → in-progress → done
-                      ↘ blocked (遇到问题停下问用户)
+                      ↘ blocked (stop and ask user when a problem arises)
 ```
 
-- 开始一个任务: `status` 改为 `in-progress`
-- 完成: 改为 `done`
-- 卡住 (需用户决策): 改为 `blocked`, 在任务对象里加 `blockReason` 字段, 停下问用户
+- Starting a task: set `status` to `in-progress`
+- Completed: set to `done`
+- Stuck (user decision needed): set to `blocked`, add a `blockReason` field to the task object, stop and ask the user
 
-### 每个任务的实现步骤
+### Implementation Steps for Each Task
 
-对 tasks[] 里每个任务, 按以下步骤执行:
+For each task in tasks[], follow these steps:
 
-1. **读 prdRef 原文** — 按 `task.prdRef` (如 `docs/prds/login.md#账号密码登录`) 定位到 PRD 二级标题下全部内容, 理解业务上下文
-2. **确认文件路径** — `task.filePath`, 目录不存在则创建
-3. **写代码**, 必须遵守:
-   - **文件头 JSDoc** 包含 `@description` / `@module` / `@dependencies` / `@prd` / `@task` / `@rules` / `@design` (参考 `.claude/rules/file-docs.md`)
-   - **`@prd` 字段**: 直接用 `task.prdRef` 原值
-   - **`@task` 字段**: `docs/tasks/<文件名>.json#<taskId>`
-   - **`@rules` 字段**: 把 `task.businessRules` 每条按顺序列进去, **原文照抄, 不要改述**
-   - **`@design` 字段**: 直接用 `task.designRef` 原值 (Figma 链接 / 本地文件路径), 无设计稿则省略
-   - **API 类型**: `import type { paths } from '@/types/api'`, **不得手写** request/response 类型
-   - **禁止硬编码**: 文案走 i18n, 颜色/尺寸走 theme token, 枚举走常量 (参考 `.claude/rules/no-hardcode.md`)
-   - **组件**: 函数式 + Props interface 导出 + 业务逻辑抽 hooks
-4. **维护目录 README.md** — 在文件所在目录的 README.md 文件清单加一行 (参考 `.claude/rules/file-docs.md`)
-5. **完成后更新 status** — 把 `tasks.json` 对应任务的 `status` 从 `in-progress` 改为 `done`
-6. **简短汇报** — 输出一句: 「✅ T00X 完成: <文件路径>」
+1. **Read the prdRef source** — navigate to `task.prdRef` (e.g., `docs/prds/login.md#account-password-login`) to find the full content under that PRD H2 heading and understand the business context
+2. **Confirm the file path** — `task.filePath`; create the directory if it doesn't exist
+3. **Write code**, strictly following:
+   - **File-header JSDoc** including `@description` / `@module` / `@dependencies` / `@prd` / `@task` / `@rules` / `@design` (see `.claude/rules/file-docs.md`)
+   - **`@prd` field**: use `task.prdRef` verbatim
+   - **`@task` field**: `docs/tasks/<filename>.json#<taskId>`
+   - **`@rules` field**: list each entry in `task.businessRules` in order — **copy verbatim, do not paraphrase**
+   - **`@design` field**: use `task.designRef` verbatim (Figma link / local file path); omit if no design spec
+   - **API types**: `import type { paths } from '@/types/api'` — **never hand-write** request/response types
+   - **No hardcoding**: text via i18n, colors/sizes via theme tokens, enums via constants (see `.claude/rules/no-hardcode.md`)
+   - **Components**: functional + exported Props interface + business logic extracted to hooks
+4. **Maintain directory README.md** — add one row to the file manifest in the README.md of the file's directory (see `.claude/rules/file-docs.md`)
+5. **Update status after completion** — change the corresponding task's `status` in tasks.json from `in-progress` to `done`
+6. **Brief report** — output one line: "✅ T00X complete: <file path>"
 
-### 什么时候停下问用户 (不要自作主张)
+### When to Stop and Ask (do not act unilaterally)
 
-- PRD 规则模糊或互相矛盾
-- OpenAPI 缺必要字段 (按 plan.md 规则, 加一条 blocked 任务推后端)
-- 依赖的上游任务未完成
-- 要选技术方案 (多种实现都合理时)
-- 要新建未在 tasks[] 里的文件 (说明 `/plan` 漏拆了任务, 应回去补 plan)
+- PRD rules are ambiguous or contradictory
+- OpenAPI is missing a required field (per plan.md rules, add a blocked task to push backend)
+- Upstream dependencies are not yet complete
+- Need to choose a technical approach (multiple valid implementations exist)
+- Need to create a file not listed in tasks[] (means `/plan` missed splitting a task — go back and update the plan)
 
-### 什么时候不要停
+### When NOT to Stop
 
-- 样式细节 (颜色/间距) — 按 theme token 合理选
-- 文件内部命名 — 按编码规范走
-- JSDoc 措辞 — 按模板套
+- Style details (colors/spacing) — choose reasonably per theme tokens
+- Internal naming — follow coding conventions
+- JSDoc wording — follow the template
 
-## 全部任务完成后
+## After All Tasks Complete
 
-1. 汇总本次产出的文件清单
-2. 提示下一步:
+1. Summarize the list of files produced in this session
+2. Suggest next steps:
    ```
-   ✅ 模块 login 全部任务完成 (共 N 个)
+   ✅ All tasks for module login complete (N total)
 
-   建议下一步:
-     1. 启动 dev 验证: pnpm dev
-     2. 生成测试: /test workspace/src/features/login/
-     3. 代码审查: /review workspace/src/features/login/
+   Suggested next steps:
+     1. Start dev to validate: pnpm dev
+     2. Generate tests: /test workspace/src/features/login/
+     3. Code review: /review workspace/src/features/login/
    ```
-3. 如果任务清单里有留存的 `blocked` 任务, 一并列出提醒
+3. If any `blocked` tasks remain in the task list, list them as a reminder
 
-## 输入
+## Input
 
 $ARGUMENTS

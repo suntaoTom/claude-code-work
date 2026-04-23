@@ -1,131 +1,131 @@
-你现在是 PRD 完备性检查器。对输入的 PRD 文件执行硬性闸门检查, 输出是否可以进入 `/plan` 任务拆解阶段。
+You are now a PRD completeness checker. Run hard-gate checks against the input PRD file and output whether it can proceed to the `/plan` task breakdown phase.
 
-## 适用场景
+## Applicable Scenarios
 
-1. **用户审阅 PRD 过程中实时自检** — 改一点跑一下, 知道离「能跑 `/plan`」还差多少
-2. **`/plan` 命令的前置校验** — `/plan` 执行前必须先跑本命令, 不通过直接拒绝进入任务拆解
+1. **User self-checks during PRD review** — make a change and run immediately to know how far from "ready to run `/plan`"
+2. **Mandatory pre-check for `/plan`** — `/plan` must run this command first; if it fails, task breakdown is refused
 
-## 输入
+## Input
 
-- `@docs/prds/xxx.md` 路径 → 直接读取
-- 不带路径 → 停下询问: 「请指定要检查的 PRD 文件路径, 例: /prd-check @docs/prds/login.md」
+- `@docs/prds/xxx.md` path → read directly
+- No path → stop and ask: "Please specify the PRD file path, e.g.: /prd-check @docs/prds/login.md"
 
-## 检查项 (按顺序执行, 不短路, 一次报全部问题)
+## Checks (run in order, no short-circuit — report all issues at once)
 
-依次执行以下 5 项检查, 每项都跑完, 最后汇总输出。**不要遇到第一个失败就停**, 用户希望一次看到所有问题。
+Run all 5 checks in sequence, collect all results before summarizing. **Do not stop at the first failure** — users want to see all issues at once.
 
-### 检查 1: `[待确认]` 零命中 (P0, 必须通过)
+### Check 1: Zero `[TBD]` hits (P0, must pass)
 
-全文 grep `[待确认]`, 命中数必须为 0。
+Full-text grep for `[TBD]`; hit count must be 0.
 
-- **为什么严**: `[待确认]` 会一路污染到 `task.businessRules` → 源码 `@rules` → 测试 `it()` 断言, 下游全错。入口拦截成本最低。
-- **不通过时**: 列出每个命中的行号和原文片段
+- **Why strict**: `[TBD]` will propagate all the way to `task.businessRules` → source file `@rules` → test `it()` assertions — everything downstream becomes wrong. Blocking at the entry point has the lowest cost.
+- **On failure**: list the line number and text snippet for each hit
 
-### 检查 2: `[待填写]` 正文零命中 (P1)
+### Check 2: Zero `[TBD]` hits in body text (P1)
 
-全文 grep `[待填写]`, **允许**出现在:
-- 元信息表 (「负责人」字段)
-- 变更记录表 (「变更人」列)
+Full-text grep for `[TBD]`. **Allowed** in:
+- Metadata table ("Owner" field)
+- Change log table ("Changed by" column)
 
-**不允许**出现在其他任何正文位置。
+**Not allowed** anywhere else in the document body.
 
-- **为什么允许元信息**: 这些字段是协作信息, 不影响下游生成
-- **不通过时**: 列出越界的命中位置
+- **Why the metadata exception**: these fields are collaboration info and don't affect downstream generation
+- **On failure**: list the out-of-bounds hit locations
 
-### 检查 3: 业务规则章节不含占位符 (P0)
+### Check 3: Business Rules section contains no placeholders (P0)
 
-扫描所有 `### 业务规则` 章节下的条目, 每条不得包含:
-- `[待确认]`
+Scan all entries under `### Business Rules` sections; each entry must not contain:
+- `[TBD]`
 - `TODO` / `FIXME` / `???`
-- 空条目 (如 `1. `)
+- Empty entries (e.g., `1. `)
 
-- **为什么严**: `businessRules` 是任务拆解和测试生成的直接来源, 带占位符等于下游断言不可靠
-- **不通过时**: 定位到哪个功能点的哪条规则
+- **Why strict**: `businessRules` is the direct source for task breakdown and test generation — placeholders mean downstream assertions are unreliable
+- **On failure**: identify which feature point and which rule contains the placeholder
 
-### 检查 4: 数据契约状态列齐全 (P1)
+### Check 4: Data Contract Status Column Complete (P1)
 
-扫描所有「调用的接口」表格, 每个 operationId 必须标状态, 取值只能是:
-- `✅ 已存在`
-- `🆕 待后端实现`
+Scan all "Interfaces Used" tables; each operationId must have a status, and the status must be one of:
+- `✅ Already exists`
+- `🆕 Pending backend implementation`
 
-- **不通过时**: 列出无状态或状态取值非法的 operationId
+- **On failure**: list operationIds with missing or invalid status values
 
-### 检查 5: 🆕 接口有 stub (P1)
+### Check 5: 🆕 Interfaces Have Stubs (P1)
 
-对每个 `🆕 待后端实现` 的 operationId, 检查它是否:
-- 出现在 PRD 的「接口提议」章节 (代码块里有对应 operationId)
-- **或**已在 `workspace/api-spec/openapi.local.json`
+For each `🆕 Pending backend implementation` operationId, check whether it:
+- Appears in the PRD's "API Proposals" section (a code block with the matching operationId)
+- **Or** is already in `workspace/api-spec/openapi.local.json`
 
-两处都没有 → 不通过。
+If absent from both → fails.
 
-- **不通过时**: 列出缺 stub 的 operationId
+- **On failure**: list the operationIds missing stubs
 
-## 附加检查 (软提示, 不阻塞)
+## Supplementary Checks (soft prompts, non-blocking)
 
-以下问题只警告, 不影响 pass/fail:
+The following only issue warnings and do not affect pass/fail:
 
-- `[默认假设]` 命中数 (提醒评审会需要确认)
-- 元信息「负责人」是否 `[待填写]`
-- 变更记录「变更人」是否 `[待填写]`
+- Count of `[Default Assumption]` hits (reminds reviewers to confirm at review meeting)
+- Whether the "Owner" metadata field is `[TBD]`
+- Whether the "Changed by" log field is `[TBD]`
 
-## 输出格式
+## Output Format
 
-### 通过时
-
-```
-✅ PRD 完备性检查通过: docs/prds/login.md
-
-已通过检查 (5/5):
-  ✅ 无 [待确认]
-  ✅ 无越界的 [待填写]
-  ✅ 业务规则无占位符
-  ✅ 数据契约状态列齐全 (5 个 operationId)
-  ✅ 🆕 接口 stub 完整 (5 个)
-
-⚠️ 软提示 (不阻塞):
-  • 文中有 6 处 [默认假设], 评审会请逐条确认
-  • 元信息「负责人」仍为 [待填写]
-
-下一步: /plan @docs/prds/login.md
-```
-
-### 不通过时
+### On Pass
 
 ```
-❌ PRD 完备性检查未通过: docs/prds/login.md
+✅ PRD completeness check passed: docs/prds/login.md
 
-已阻塞问题 (需全部修复后才能跑 /plan):
+Passed checks (5/5):
+  ✅ No [TBD]
+  ✅ No out-of-bounds [TBD]
+  ✅ Business rules have no placeholders
+  ✅ Data contract status column complete (5 operationIds)
+  ✅ 🆕 Interface stubs complete (5)
 
-[检查 1: 无 [待确认]]  命中 3 处
-  L118  | [待确认] 邮箱                  — 注册字段定义
-  L119  | [待确认] 手机号                — 注册字段定义
-  L128  | 业务规则 6: [待确认] 是否需要邮箱...
+⚠️ Soft prompts (non-blocking):
+  • 6 [Default Assumption] items in the document — please confirm each at the review meeting
+  • "Owner" metadata field is still [TBD]
 
-[检查 3: 业务规则无占位符]  命中 2 处
-  功能点 2「用户注册」业务规则 6: [待确认] 是否需要...
-  功能点 2「用户注册」业务规则 7: [待确认] 是否需要...
-
-[检查 5: 🆕 接口有 stub]  缺 1 个
-  operationId `sendResetCode` 标为 🆕 但「接口提议」章节无对应 stub
-
-已通过 (2/5):
-  ✅ 无越界的 [待填写]
-  ✅ 数据契约状态列齐全
-
-修复方式参考: docs/prds/REVIEW.md
-  (A) 问产品/后端拿到答案, 填实具体规则
-  (B) 本迭代不做的功能, 整段删除或改为「下迭代」
-  (C) [默认假设] 不必改, 评审会再定; [待确认] 必须清零
-
-修完后重新执行: /prd-check @docs/prds/login.md
+Next step: /plan @docs/prds/login.md
 ```
 
-## 设计原则
+### On Failure
 
-- **不修改 PRD 文件**, 只读检查
-- **不短路**: 一次跑完 5 项, 全部问题一起报
-- **输出 actionable**: 每条问题带行号/位置 + 指向 `docs/prds/REVIEW.md`
-- **默认假设不拦**: AI 已经给了默认值, 可以带着走, 评审会再定
+```
+❌ PRD completeness check failed: docs/prds/login.md
 
-需求如下:
+Blocking issues (all must be fixed before running /plan):
+
+[Check 1: No [TBD]]  3 hits
+  L118  | [TBD] email                  — registration field definition
+  L119  | [TBD] phone number           — registration field definition
+  L128  | Business rule 6: [TBD] whether email is required...
+
+[Check 3: Business rules have no placeholders]  2 hits
+  Feature point 2 "User Registration" rule 6: [TBD] whether...
+  Feature point 2 "User Registration" rule 7: [TBD] whether...
+
+[Check 5: 🆕 Interface stubs complete]  1 missing
+  operationId `sendResetCode` marked as 🆕 but "API Proposals" section has no matching stub
+
+Passed (2/5):
+  ✅ No out-of-bounds [TBD]
+  ✅ Data contract status column complete
+
+Fix reference: docs/prds/REVIEW.md
+  (A) Get answers from PM/backend and fill in concrete rules
+  (B) Features not in this iteration — delete the section or change to "next iteration"
+  (C) [Default Assumption] does not need to change — confirm at review meeting; [TBD] must be cleared
+
+After fixing, rerun: /prd-check @docs/prds/login.md
+```
+
+## Design Principles
+
+- **Do not modify the PRD file** — read-only checks
+- **No short-circuit**: run all 5 checks at once, report all issues together
+- **Actionable output**: each issue includes line number/location + pointer to `docs/prds/REVIEW.md`
+- **Default assumptions don't block**: the AI has already provided a default value; proceed and confirm at review meeting
+
+Requirements are as follows:
 $ARGUMENTS
