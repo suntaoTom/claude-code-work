@@ -1,78 +1,78 @@
-# 性能审计 checklist
+# Performance Audit Checklist
 
-> AI 读源码时按这个清单逐项检查, 命中即输出。
+> AI reads source code and checks each item in this list — flag it if it matches.
 
-## 1. 包体积
+## 1. Bundle Size
 
-### 整库 import
+### Full-library imports
 ```typescript
-// ❌ import _ from 'lodash'   → 打进整个 lodash (~70KB)
+// ❌ import _ from 'lodash'   → bundles the entire lodash (~70KB)
 // ✅ import get from 'lodash/get'
-// ✅ import { get } from 'lodash-es'  (配合 tree shake)
+// ✅ import { get } from 'lodash-es'  (works with tree shaking)
 ```
 
-### 常见体积杀手
+### Common bundle killers
 
-| 包 | 大小 | 替代方案 |
-|----|------|---------|
+| Package | Size | Alternative |
+|---------|------|-------------|
 | moment | 290KB | dayjs (7KB) |
-| lodash (整包) | 70KB | lodash-es + tree shake 或单个 import |
-| antd (整包) | - | 按需 import 已由 @umijs/max 自动处理, 确认 import 语句是 `from 'antd'` |
-| @ant-design/icons (整包) | 900KB | 单个 import: `from '@ant-design/icons/lib/icons/PlusOutlined'` |
-| echarts (整包) | 1MB | `echarts/core` + 按需 register |
-| crypto-js | 200KB | 用原生 WebCrypto API |
+| lodash (full) | 70KB | lodash-es + tree shake, or individual imports |
+| antd (full) | — | Per-component import is handled automatically by @umijs/max; verify import statements use `from 'antd'` |
+| @ant-design/icons (full) | 900KB | Single import: `from '@ant-design/icons/lib/icons/PlusOutlined'` |
+| echarts (full) | 1MB | `echarts/core` + register on demand |
+| crypto-js | 200KB | Use the native WebCrypto API |
 
-### 重复依赖
-- 同功能多个库: moment + dayjs, axios + umi-request, lodash + ramda
-- 使用 `pnpm ls <包名>` 查是否有多版本
+### Duplicate dependencies
+- Multiple libraries serving the same purpose: moment + dayjs, axios + umi-request, lodash + ramda
+- Run `pnpm ls <package>` to check for multiple installed versions
 
-### 未懒加载
-- 路由级 `dynamic(() => import('./Page'))`
-- 大组件 (Chart / RichEditor / Map) 懒加载
-- 非首屏 modal 懒加载
+### Missing lazy loading
+- Route-level: `dynamic(() => import('./Page'))`
+- Large components (Chart / RichEditor / Map) should be lazy-loaded
+- Off-screen modals should be lazy-loaded
 
-### 开发代码混入
+### Dev code leaking into production
 - `console.log` / `console.debug`
-- 测试工具如 `why-did-you-render`
+- Dev tools like `why-did-you-render`
 
-## 2. 渲染性能
+## 2. Rendering Performance
 
-### 缺 memo
+### Missing memo
 ```typescript
-// ❌ 纯展示组件, 每次父组件 render 都重渲
+// ❌ Pure display component re-renders on every parent render
 export function UserCard({ user }: Props) { ... }
 
 // ✅
 export const UserCard = React.memo(function UserCard({ user }: Props) { ... });
 ```
 
-### 无 key / index 作 key
+### Missing key / using index as key
 ```typescript
 // ❌ items.map((item, i) => <Row key={i} ... />)
 // ✅ items.map(item => <Row key={item.id} ... />)
 ```
 
-### 渲染路径新建引用
+### New references created in the render path
 ```typescript
-// ❌ 每次渲染新建 style 对象
+// ❌ Creates a new style object on every render
 <Button style={{ marginLeft: 8 }} onClick={() => handle(id)} />
 
-// ✅ 提升到外部常量或 useCallback
+// ✅ Lift to an outer constant or useCallback
 const BTN_STYLE = { marginLeft: 8 };
 const handleClick = useCallback(() => handle(id), [id]);
 ```
 
-### 状态提升过高
-- 大列表里单个 item 的编辑态放 item 组件里, 不要放父组件
-- 表单单个字段的值放字段组件里, 不要全塞父组件
+### State hoisted too high
+- Edit state for a single item in a large list should live in the item component, not the parent
+- Individual field values in a form should live in the field component, not all crammed into the parent
 
-### JS 做 CSS 的事
-- 动画用 CSS transition, 不用 setInterval
-- 显隐用 CSS `display` / `visibility`, 不用卸载组件
+### JS doing CSS's job
+- Use CSS `transition` for animations, not `setInterval`
+- Use CSS `display` / `visibility` for show/hide, don't unmount the component
 
-## 3. 网络性能
+## 3. Network Performance
 
-### 串行可并行
+### Serial requests that could be parallel
 ```typescript
 // ❌
 const user = await getUser();
@@ -82,25 +82,25 @@ const posts = await getPosts();
 const [user, posts] = await Promise.all([getUser(), getPosts()]);
 ```
 
-### 缺请求缓存/去重
-- 用 umi-request 的 useRequest hook 自带 cache
-- 相同参数短时间内重复请求要去重
+### Missing request caching / deduplication
+- umi-request's `useRequest` hook has built-in caching
+- Duplicate requests with the same parameters within a short window should be deduplicated
 
-### 图片优化
-- 格式: 优先 WebP, 回落 JPG
-- 响应式: 用 `srcset` + `sizes`
-- 懒加载: `loading="lazy"`
-- 首屏关键图: `<link rel="preload" as="image">`
+### Image optimization
+- Format: prefer WebP, fall back to JPG
+- Responsive: use `srcset` + `sizes`
+- Lazy loading: `loading="lazy"`
+- Critical above-the-fold images: `<link rel="preload" as="image">`
 
-### 资源预加载
+### Resource preloading
 ```html
-<link rel="prefetch" href="/api/user/current">  <!-- 下一页面可能需要 -->
-<link rel="preload" href="/fonts/xxx.woff2" as="font" crossorigin>  <!-- 关键字体 -->
+<link rel="prefetch" href="/api/user/current">  <!-- may be needed on the next page -->
+<link rel="preload" href="/fonts/xxx.woff2" as="font" crossorigin>  <!-- critical font -->
 ```
 
-## 4. 内存
+## 4. Memory
 
-### useEffect 缺 cleanup
+### useEffect missing cleanup
 ```typescript
 // ❌
 useEffect(() => {
@@ -114,38 +114,38 @@ useEffect(() => {
 }, []);
 ```
 
-必查的 cleanup 场景:
-- 事件监听 (addEventListener)
-- 定时器 (setInterval / setTimeout)
-- 订阅 (WebSocket / EventSource)
-- RAF (requestAnimationFrame)
-- IntersectionObserver / ResizeObserver / MutationObserver
+Scenarios that always require cleanup:
+- Event listeners (`addEventListener`)
+- Timers (`setInterval` / `setTimeout`)
+- Subscriptions (WebSocket / EventSource)
+- RAF (`requestAnimationFrame`)
+- `IntersectionObserver` / `ResizeObserver` / `MutationObserver`
 
-### 闭包持有大对象
-- 避免在 useCallback/useMemo 的依赖里捕获整个大 state, 只捕获用到的字段
+### Closures holding large objects
+- Avoid capturing an entire large state object in `useCallback`/`useMemo` dependencies — capture only the fields actually used
 
-### 无虚拟滚动
-- 列表 > 100 条用 react-window / react-virtualized
-- antd Table 大数据开 `virtual`
+### No virtual scrolling
+- Lists with > 100 items should use `react-window` / `react-virtualized`
+- antd Table with large datasets should enable `virtual`
 
-## 5. 首屏
+## 5. Initial Load
 
-### 阻塞关键路径
-- 别在 App 根节点同步请求非必要数据
-- 权限/用户信息用 `getInitialState`, 不要在每个页面各自请求
+### Blocking the critical path
+- Don't make synchronous requests for non-essential data at the App root
+- Auth / user info should use `getInitialState`; don't fetch them individually on every page
 
-### 缺 Skeleton / Suspense
-- 首屏 loading 用 antd Skeleton, 不要空白
-- 路由级 lazy 加载用 `<Suspense fallback={<Skeleton />}>`
+### Missing Skeleton / Suspense
+- Use antd `Skeleton` for initial load — don't show a blank screen
+- Route-level lazy loading should use `<Suspense fallback={<Skeleton />}>`
 
-### 瀑布流请求
+### Waterfall requests
 ```typescript
-// ❌ 串行但不依赖
+// ❌ Serial but not dependent
 const a = await getA();   // 200ms
-const b = await getB();   // 200ms, 不依赖 a
-// 总耗时 400ms
+const b = await getB();   // 200ms, doesn't depend on a
+// total: 400ms
 
 // ✅
 const [a, b] = await Promise.all([getA(), getB()]);
-// 总耗时 200ms
+// total: 200ms
 ```

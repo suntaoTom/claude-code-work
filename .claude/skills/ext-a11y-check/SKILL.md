@@ -1,53 +1,53 @@
 ---
 name: ext-a11y-check
-description: 无障碍 (Accessibility) 审计。对指定组件/页面进行 WCAG 2.1 AA 合规检查, 覆盖语义化 HTML、ARIA、键盘操作、视觉对比度、antd 组件特定检查。用户明确要求「无障碍检查 / a11y 审计 / WCAG 合规 / 屏幕阅读器支持」时触发。
+description: Accessibility audit. Performs WCAG 2.1 AA compliance checks on specified components/pages, covering semantic HTML, ARIA, keyboard interaction, visual contrast, and antd component-specific checks. Triggered when the user explicitly requests "accessibility check / a11y audit / WCAG compliance / screen reader support".
 ---
 
-# ext-a11y-check — 无障碍合规检查
+# ext-a11y-check — Accessibility Compliance Check
 
-你现在是无障碍 (Accessibility) 专家。对指定的组件/页面进行 WCAG 2.1 AA 级合规检查。
+You are now an Accessibility expert. Perform a WCAG 2.1 AA compliance check on the specified component or page.
 
-## 执行方式
+## Execution Approach
 
-a11y 检查主要靠静态分析 (读 JSX / 读 CSS), 没有决定性脚本。AI 按 [references/wcag-aa-checklist.md](references/wcag-aa-checklist.md) 逐条扫描源码, 对照 [references/antd-a11y-notes.md](references/antd-a11y-notes.md) 做 antd 特定检查。
+A11y checks rely primarily on static analysis (reading JSX / CSS) — there are no definitive scripts. AI scans the source code item-by-item against [references/wcag-aa-checklist.md](references/wcag-aa-checklist.md) and cross-references [references/antd-a11y-notes.md](references/antd-a11y-notes.md) for antd-specific checks.
 
-## 检查流程
+## Audit Flow
 
-1. 读 `$ARGUMENTS` 指定的文件/目录
-2. 按 [references/wcag-aa-checklist.md](references/wcag-aa-checklist.md) 的 5 大维度逐条检查:
-   - 语义化 HTML
-   - ARIA 属性
-   - 键盘操作
-   - 视觉 (对比度/alt/文字缩放)
-   - antd 组件特定检查
-3. 每个问题关联到 WCAG 2.1 具体条目 (如 `1.1.1 Non-text Content`)
-4. 输出违规 + 改进 + 合规率
+1. Read the file/directory specified by `$ARGUMENTS`
+2. Check each item across the 5 dimensions in [references/wcag-aa-checklist.md](references/wcag-aa-checklist.md):
+   - Semantic HTML
+   - ARIA attributes
+   - Keyboard interaction
+   - Visual (contrast / alt text / text scaling)
+   - antd component-specific checks
+3. Link each issue to the specific WCAG 2.1 criterion (e.g. `1.1.1 Non-text Content`)
+4. Output violations + improvements + compliance rate
 
-## 输出格式
+## Output Format
 
 ```
-🔴 违规 (WCAG AA 不达标):
-- [文件:行号] 问题描述
-  标准: WCAG 2.1 条目编号 (如 1.1.1 Non-text Content)
-  影响: 具体受影响人群 (如: 视障用户无法知道按钮用途)
-  修复: 代码示例
+🔴 Violations (WCAG AA non-compliant):
+- [file:line] Issue description
+  Standard: WCAG 2.1 criterion number (e.g. 1.1.1 Non-text Content)
+  Impact: Specific affected group (e.g. visually impaired users cannot determine the button's purpose)
+  Fix: Code example
 
-🟡 改进 (提升体验但非强制):
-- [文件:行号] 问题描述
-  修复: 方案
+🟡 Improvements (enhances experience but not required):
+- [file:line] Issue description
+  Fix: Proposed solution
 
-📊 合规率: X/Y 项通过, 评级: AA / 未达标
+📊 Compliance rate: X/Y items passing, Rating: AA / Non-compliant
 ```
 
-## 使用方式
+## Usage
 
 ```
 /ext-a11y-check workspace/src/features/login/
 /ext-a11y-check workspace/src/components/DataTable.tsx
 ```
 
-## 设计原则
+## Design Principles
 
-- 原生 HTML 能表达的语义就用原生, 不要滥用 ARIA
-- 每个 🔴 违规必须关联 WCAG 具体条目编号, 方便用户查原文
-- 不自动修改代码, 只输出问题清单和建议 — 修复由用户手动或走 `/fix`
+- Use native HTML semantics where they suffice; don't overuse ARIA
+- Every 🔴 violation must cite the WCAG criterion number so users can look it up
+- Never auto-modify code — output a list of issues and recommendations only; fixes are done manually by the user or via `/fix`

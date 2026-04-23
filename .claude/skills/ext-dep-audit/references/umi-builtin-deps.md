@@ -1,56 +1,56 @@
-# Umi 内置依赖清单
+# Umi Built-in Dependency List
 
-> 以下依赖由 `@umijs/max` 或 Umi 插件生态内置提供, **项目不应显式安装**。
-> 显式安装会导致版本不一致、bundle 重复打包、插件拿不到正确实例等问题。
+> The following dependencies are provided by `@umijs/max` or the Umi plugin ecosystem and **should not be explicitly installed** in the project.
+> Explicit installation causes version mismatches, duplicate bundle entries, and plugins failing to obtain the correct instance.
 
-## 请求
+## Requests
 
-| 包名 | 替代方案 |
-|------|---------|
-| axios | 用 `request` from `@umijs/max` (基于 umi-request) |
+| Package | Alternative |
+|---------|-------------|
+| axios | Use `request` from `@umijs/max` (based on umi-request) |
 
-## 路由
+## Routing
 
-| 包名 | 替代方案 |
-|------|---------|
-| react-router | Umi 内置约定式路由 |
+| Package | Alternative |
+|---------|-------------|
+| react-router | Umi's built-in convention-based routing |
 | react-router-dom | `history` / `useNavigate` from `@umijs/max` |
 
-## 构建工具
+## Build Tools
 
-| 包名 | 替代方案 |
-|------|---------|
-| webpack | Umi 已内置 (config.ts 的 `mfsu` / chainWebpack) |
-| vite | Umi 已内置 Vite 模式 (config.ts 的 `vite: {}`) |
+| Package | Alternative |
+|---------|-------------|
+| webpack | Built into Umi (`mfsu` / `chainWebpack` in config.ts) |
+| vite | Umi has built-in Vite mode (`vite: {}` in config.ts) |
 
-## 代码规范
+## Code Quality
 
-| 包名 | 替代方案 |
-|------|---------|
-| eslint | 用 `@umijs/lint` |
-| prettier | 用 `@umijs/lint` |
-| stylelint | 用 `@umijs/lint` |
+| Package | Alternative |
+|---------|-------------|
+| eslint | Use `@umijs/lint` |
+| prettier | Use `@umijs/lint` |
+| stylelint | Use `@umijs/lint` |
 
 ## UI
 
-| 包名 | 替代方案 |
-|------|---------|
-| antd | 通过 `@umijs/max` 集成, 从 `antd` 正常 import 即可 (不需要显式装) |
-| @ant-design/icons | 已随 antd 一并提供 |
+| Package | Alternative |
+|---------|-------------|
+| antd | Integrated via `@umijs/max`; import normally from `antd` (no explicit install needed) |
+| @ant-design/icons | Bundled with antd |
 
-## 状态管理
+## State Management
 
-| 包名 | 替代方案 |
-|------|---------|
-| - | Umi 自带 `@umijs/plugin-model` (useModel), 复杂场景才装 Zustand |
+| Package | Alternative |
+|---------|-------------|
+| — | Umi includes `@umijs/plugin-model` (useModel); only install Zustand for complex scenarios |
 
-## 国际化
+## Internationalization
 
-| 包名 | 替代方案 |
-|------|---------|
-| react-intl | 用 `@umijs/plugin-locale` (基于 react-intl 封装) |
+| Package | Alternative |
+|---------|-------------|
+| react-intl | Use `@umijs/plugin-locale` (a wrapper around react-intl) |
 
-## 如何验证
+## How to Verify
 
-运行 `pnpm ls --depth 1 | grep <包名>` 查看实际依赖来源。
-如果是从 `@umijs/max` 传递依赖, 就不需要自己装。
+Run `pnpm ls --depth 1 | grep <package>` to check the actual source of a dependency.
+If it is a transitive dependency from `@umijs/max`, you do not need to install it yourself.

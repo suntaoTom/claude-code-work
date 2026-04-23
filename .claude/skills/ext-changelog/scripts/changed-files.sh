@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# changed-files.sh — 列出指定范围内变更的文件 (A/M/D)
-# 用法: bash .claude/skills/ext-changelog/scripts/changed-files.sh [since] [scope]
+# changed-files.sh — list files changed within the specified range (A/M/D)
+# usage: bash .claude/skills/ext-changelog/scripts/changed-files.sh [since] [scope]
 
 set -u
 
@@ -11,12 +11,12 @@ ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 cd "$ROOT" || exit 0
 
 if [ ! -d ".git" ]; then
-  echo "❌ 不是 git 仓库"
+  echo "❌ Not a git repository"
   exit 0
 fi
 
-echo "===== 文件变更清单 (since=$SINCE, scope=$SCOPE) ====="
-echo "格式: <状态> <文件路径>  (A=新增, M=修改, D=删除, R=重命名)"
+echo "===== Changed file list (since=$SINCE, scope=$SCOPE) ====="
+echo "Format: <status> <file path>  (A=Added, M=Modified, D=Deleted, R=Renamed)"
 echo ""
 
 git log --since="$SINCE" --no-merges --name-status --pretty=format:"" -- "$SCOPE" \
@@ -24,7 +24,7 @@ git log --since="$SINCE" --no-merges --name-status --pretty=format:"" -- "$SCOPE
   | sort -u
 
 echo ""
-echo "===== 按模块聚合 ====="
+echo "===== Aggregated by module ====="
 git log --since="$SINCE" --no-merges --name-status --pretty=format:"" -- "$SCOPE" \
   | grep -E "^[AMDR]" \
   | awk '{print $2}' \

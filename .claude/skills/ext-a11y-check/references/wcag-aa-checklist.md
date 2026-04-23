@@ -1,108 +1,108 @@
-# WCAG 2.1 AA 检查清单
+# WCAG 2.1 AA Checklist
 
-> 每条命中都要关联 WCAG 条目编号和具体代码行号。
+> Every match must be linked to its WCAG criterion number and specific code line number.
 
-## 1. 语义化 HTML
+## 1. Semantic HTML
 
-### 1.1 滥用 div
-**标准**: WCAG 4.1.2 Name, Role, Value
+### 1.1 Overuse of div
+**Standard**: WCAG 4.1.2 Name, Role, Value
 
 ```tsx
 // ❌
-<div onClick={handleClick}>提交</div>
+<div onClick={handleClick}>Submit</div>
 <div className="nav">...</div>
 
 // ✅
-<button onClick={handleClick}>提交</button>
+<button onClick={handleClick}>Submit</button>
 <nav>...</nav>
 ```
 
-可替换清单:
-- `<div onClick>` → `<button>` 或加 `role="button" tabIndex={0}` + keyDown 处理
-- 导航 → `<nav>`
-- 主内容 → `<main>`
-- 侧边 → `<aside>`
-- 节 → `<section>` / `<article>`
-- 列表 → `<ul>` / `<ol>` + `<li>`
+Replacement list:
+- `<div onClick>` → `<button>` or add `role="button" tabIndex={0}` + keyDown handler
+- Navigation → `<nav>`
+- Main content → `<main>`
+- Sidebar → `<aside>`
+- Section → `<section>` / `<article>`
+- Lists → `<ul>` / `<ol>` + `<li>`
 
-### 1.2 标题层级不连续
-**标准**: WCAG 1.3.1 Info and Relationships
+### 1.2 Non-sequential heading levels
+**Standard**: WCAG 1.3.1 Info and Relationships
 
-- 不能从 `<h1>` 跳到 `<h3>`
-- 一个页面只能有一个 `<h1>`
-- 层级必须递进, 不能跳级
+- Don't skip from `<h1>` to `<h3>`
+- Only one `<h1>` per page
+- Heading levels must be sequential; no skipping
 
-### 1.3 表单控件无 label
-**标准**: WCAG 3.3.2 Labels or Instructions
+### 1.3 Form controls without labels
+**Standard**: WCAG 3.3.2 Labels or Instructions
 
 ```tsx
 // ❌
-<input type="email" placeholder="邮箱" />
+<input type="email" placeholder="Email" />
 
 // ✅
-<label htmlFor="email">邮箱</label>
+<label htmlFor="email">Email</label>
 <input id="email" type="email" />
 
-// ✅ 或 antd Form
-<Form.Item label="邮箱" name="email">
+// ✅ or antd Form
+<Form.Item label="Email" name="email">
   <Input />
 </Form.Item>
 ```
 
-## 2. ARIA 属性
+## 2. ARIA Attributes
 
-### 2.1 图标按钮缺 aria-label
-**标准**: WCAG 4.1.2 Name, Role, Value
+### 2.1 Icon buttons missing aria-label
+**Standard**: WCAG 4.1.2 Name, Role, Value
 
 ```tsx
 // ❌
 <Button icon={<DeleteOutlined />} />
 
 // ✅
-<Button icon={<DeleteOutlined />} aria-label="删除" />
+<Button icon={<DeleteOutlined />} aria-label="Delete" />
 ```
 
-检查规则: `<Button>` / `<a>` 如果只有 icon 没有 text, 必须有 `aria-label`。
+Check rule: `<Button>` / `<a>` with only an icon and no text must have an `aria-label`.
 
-### 2.2 动态内容未声明 aria-live
-**标准**: WCAG 4.1.3 Status Messages
+### 2.2 Dynamic content not announcing via aria-live
+**Standard**: WCAG 4.1.3 Status Messages
 
-- Toast / message 提示应有 `role="status"` 或 `aria-live="polite"`
-- 错误提示应有 `role="alert"` 或 `aria-live="assertive"`
-- antd `message` / `notification` 已处理, 自定义 toast 需注意
+- Toast / message alerts should have `role="status"` or `aria-live="polite"`
+- Error alerts should have `role="alert"` or `aria-live="assertive"`
+- antd `message` / `notification` already handle this; watch out for custom toasts
 
-### 2.3 模态框缺 role
-**标准**: WCAG 4.1.2
+### 2.3 Modal dialogs missing role
+**Standard**: WCAG 4.1.2
 
-- `<Modal>` 应有 `role="dialog"` + `aria-modal="true"` (antd Modal 已处理)
-- 自定义弹层要手动加
+- `<Modal>` should have `role="dialog"` + `aria-modal="true"` (antd Modal already handles this)
+- Custom overlays need these added manually
 
-### 2.4 ARIA 滥用
+### 2.4 ARIA overuse
 ```tsx
-// ❌ 原生已表达, 不需要
-<button role="button">提交</button>
+// ❌ native element already implies this — redundant
+<button role="button">Submit</button>
 <nav role="navigation">...</nav>
 
-// ✅ 只在原生不够时用
-<div role="tablist">...</div>  // div 没有 tablist 语义
+// ✅ use ARIA only when native semantics are insufficient
+<div role="tablist">...</div>  // div has no tablist semantics natively
 ```
 
-## 3. 键盘操作
+## 3. Keyboard Interaction
 
-### 3.1 交互元素无法 Tab 聚焦
-**标准**: WCAG 2.1.1 Keyboard
+### 3.1 Interactive elements not reachable via Tab
+**Standard**: WCAG 2.1.1 Keyboard
 
-- 所有 `onClick` 元素必须可聚焦 (原生 button/a/input 自带, div 需要 `tabIndex={0}`)
-- 禁用元素用 `disabled` 而非 `pointer-events: none` (后者仍可被 Tab 到)
+- All `onClick` elements must be focusable (native button/a/input are by default; divs need `tabIndex={0}`)
+- Use `disabled` to disable elements — not `pointer-events: none` (which still allows Tab focus)
 
-### 3.2 键盘事件缺失
-**标准**: WCAG 2.1.1
+### 3.2 Missing keyboard event handlers
+**Standard**: WCAG 2.1.1
 
 ```tsx
-// ❌ 只响应鼠标
+// ❌ responds to mouse only
 <div onClick={handle} tabIndex={0}>...</div>
 
-// ✅ 补 keyDown
+// ✅ add keyDown
 <div
   onClick={handle}
   onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handle()}
@@ -111,64 +111,64 @@
 >...</div>
 ```
 
-### 3.3 模态框缺焦点陷阱
-**标准**: WCAG 2.4.3 Focus Order
+### 3.3 Modal missing focus trap
+**Standard**: WCAG 2.4.3 Focus Order
 
-- Modal 打开时焦点应进入 Modal, 关闭时返回触发元素
-- Tab 键在 Modal 内循环, 不应跳到背景页
-- antd Modal 已处理; 自定义弹层要注意
+- When a modal opens, focus should move into it; when it closes, focus should return to the trigger element
+- Tab key should cycle within the modal and not reach background content
+- antd Modal already handles this; custom overlays need to implement it
 
-### 3.4 Esc 关闭缺失
-- Modal / Drawer / Popover 应支持 Esc 关闭
-- antd 默认支持, 自定义组件要加
+### 3.4 Missing Esc to close
+- Modal / Drawer / Popover should support closing with Esc
+- antd supports this by default; custom components need to add it
 
-## 4. 视觉
+## 4. Visual
 
-### 4.1 对比度不足
-**标准**: WCAG 1.4.3 Contrast (Minimum)
+### 4.1 Insufficient contrast
+**Standard**: WCAG 1.4.3 Contrast (Minimum)
 
-- 正文文字: 4.5:1
-- 大文字 (18pt 或 14pt 加粗): 3:1
-- 非文本元素 (图标/边框): 3:1
+- Body text: 4.5:1
+- Large text (18pt or 14pt bold): 3:1
+- Non-text elements (icons / borders): 3:1
 
-检查方法:
-- 读 CSS/theme.ts 中的颜色值
-- 对比文字颜色 vs 背景颜色
-- 禁用态文字不强制 (WCAG 允许例外), 但应仍可识别
+How to check:
+- Read color values from CSS / theme.ts
+- Compare text color against background color
+- Disabled state text is exempt from this rule (WCAG allows an exception), but should still be legible
 
-### 4.2 仅颜色传达信息
-**标准**: WCAG 1.4.1 Use of Color
+### 4.2 Color as the only means of conveying information
+**Standard**: WCAG 1.4.1 Use of Color
 
 ```tsx
-// ❌ 红色 = 错误, 色盲看不懂
-<span style={{ color: 'red' }}>必填</span>
+// ❌ red = error — invisible to color-blind users
+<span style={{ color: 'red' }}>Required</span>
 
-// ✅ 颜色 + 图标/文字
+// ✅ color + icon/text
 <span style={{ color: 'red' }}>
-  <ExclamationCircleOutlined /> 必填
+  <ExclamationCircleOutlined /> Required
 </span>
 ```
 
-### 4.3 图片 alt 缺失
-**标准**: WCAG 1.1.1 Non-text Content
+### 4.3 Missing alt text on images
+**Standard**: WCAG 1.1.1 Non-text Content
 
 ```tsx
 // ❌
 <img src="/avatar.png" />
 
-// ✅ 有意义的图
-<img src="/avatar.png" alt="张三的头像" />
+// ✅ meaningful image
+<img src="/avatar.png" alt="Zhang San's avatar" />
 
-// ✅ 装饰图
+// ✅ decorative image
 <img src="/decoration.png" alt="" role="presentation" />
 ```
 
-### 4.4 文字缩放溢出
-**标准**: WCAG 1.4.4 Resize text
+### 4.4 Text overflow at scaled sizes
+**Standard**: WCAG 1.4.4 Resize text
 
-- 浏览器缩放到 200% 时不应出现水平滚动条或文字被截断
-- 用 rem/em 而非固定 px, 或用 clamp()
+- At 200% browser zoom, there should be no horizontal scrollbar and no text clipping
+- Use rem/em instead of fixed px, or use clamp()
 
-## 5. antd 组件特定检查
+## 5. antd Component-specific Checks
 
-参见 [antd-a11y-notes.md](antd-a11y-notes.md)
+See [antd-a11y-notes.md](antd-a11y-notes.md)
