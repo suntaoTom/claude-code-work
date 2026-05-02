@@ -106,6 +106,75 @@ pending → in-progress → done
 
 ## 全部任务完成后
 
+### 第一步: Visual QA (强制执行, 有设计截图时)
+
+检查 `docs/designs/screenshots/` 目录是否存在设计原型截图 (`.png` / `.jpg`)。
+
+**有截图时**, 执行以下流程:
+
+1. **启动前端 dev 服务**:
+   ```bash
+   pnpm dev &
+   # 等待端口就绪 (最多 15s)
+   until curl -s http://localhost:8000 > /dev/null; do sleep 1; done
+   ```
+
+2. **确保 Playwright 可用 (自动安装)**:
+   ```bash
+   # 检查是否已安装, 未安装则自动装
+   if ! npx --no playwright --version > /dev/null 2>&1; then
+     pnpm add -D playwright
+   fi
+   # 确保 chromium 浏览器二进制存在
+   npx playwright install chromium
+   ```
+
+3. **用 Playwright 截图实际效果**:
+   ```bash
+   npx playwright screenshot --browser chromium \
+     --full-page http://localhost:8000 \
+     /tmp/actual-screenshot.png
+   ```
+
+4. **读取两张图像对比** — 调用 Read 工具分别读取设计截图 (`docs/designs/screenshots/*.png`) 和实际截图 (`/tmp/actual-screenshot.png`), 用视觉判断做三层检查:
+
+   | 层级 | 检查项 | 合格标准 | 不合格时 |
+   |------|--------|---------|---------|
+   | **P0 — 结构** | 主要区域存在 (ActivityBar / TopBar / Board 泳道 / RetroTimeline 等) | 100% 存在 | **必须修复再继续** |
+   | **P1 — 视觉 Token** | 背景色、边框色、文字颜色、圆角大小、间距档位与设计一致 | ≥ 95% | **必须修复再继续** |
+   | **P2 — 像素级** | 字号精确、图标大小、阴影参数 | ≥ 75% | 记录差异, 不阻塞 |
+
+5. **输出差异报告**:
+   ```
+   📸 Visual QA 对比结果
+   P0 结构: ✅ 全部存在
+   P1 视觉: ⚠️  3 处差异:
+     - AgentCard border-radius 应为 7px, 实际 5px
+     - Lane head padding 应为 10px 12px, 实际 8px 10px
+     - StatusBadge 应为 pill 形 (border-radius: 10px), 实际 3px
+   P2 像素: 记录 (不阻塞)
+   ```
+
+6. **自动修复 P0/P1 差异**:
+   - 定位到出问题的 `.module.css` 或 `.tsx` 文件, 用 Edit 工具直接修
+   - 修完后**重新截图** (重复步骤 3-4) 验证修复是否生效
+   - 若修复后仍不合格, 再修一次; 最多尝试 3 轮
+
+7. **追溯根因到命令文件** — 如果差异是因为 `/plan` 生成的 tasks.json `businessRules` 描述不精确, 或 `/prd` 的设计规则有误导, 同步修复对应的 `.claude/commands/` 文件里相关描述, 避免下次 `/code` 重蹈覆辙。具体判断:
+   - 差异是「tokens 选错」→ 修源文件, 不改命令
+   - 差异是「规则描述模糊」(如没说明 border-radius 具体值) → 在 `.claude/commands/code.md` 的「什么时候不要停」章节或对应 PRD 里补具体约束
+
+8. **关闭 dev 服务**:
+   ```bash
+   kill %1 2>/dev/null || true
+   ```
+
+**无截图时**: 跳过本步, 提示用户可将设计截图放入 `docs/designs/screenshots/` 以启用 Visual QA。
+
+---
+
+### 第二步: 汇总与提示
+
 1. 汇总本次产出的文件清单
 2. 提示下一步:
    ```
