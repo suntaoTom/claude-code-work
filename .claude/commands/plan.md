@@ -47,7 +47,26 @@ outputs: ["tasks.json"]
 ## 分析步骤
 
 1. **理解需求**: 通读 PRD, 列出所有功能点 + 业务规则
-2. **提取数据契约 + 一致性校验**: 读 PRD 的「数据契约」章节, 拿到 operationId 列表 + 状态 + 错误码映射
+
+2. **扫描设计稿（有效果图时必须执行）**: 读 PRD 「设计稿」章节, 判断是否引用了效果图
+
+   - **找到图片路径**: 扫描 PRD 里的 `docs/designs/screenshots/reference/*.png` / `.jpg` 引用
+   - **用 Read 工具加载图片** — Claude 多模态视觉识别, 逐 UI 区域提取:
+     - 区域名称 (如 TopBar / PipelineStrip / Board / Card)
+     - 可感知的视觉规格: 高度、背景色、字体色、间距、圆角等
+     - 该区域包含的控件列表
+   - **生成「设计区域 → PRD 功能点」映射表**, 后续用于填写每个任务的 `designRef`:
+
+     | 设计区域 | 对应 PRD 功能点 | designRef 值 |
+     |---------|----------------|-------------|
+     | TopBar | #顶部操作栏 | `docs/designs/screenshots/reference/xiaoguotu.png#TopBar` |
+     | PipelineStrip | #流水线步骤条 | `docs/designs/screenshots/reference/xiaoguotu.png#PipelineStrip` |
+     | Board | #看板泳道 | `docs/designs/screenshots/reference/xiaoguotu.png#Board` |
+
+   - **若图中有 PRD 未覆盖的 UI 区域**, 发出警告提示用户补 PRD (不阻塞, 但强烈建议)
+   - **无效果图时**: 跳过本步, `designRef` 用 Figma 链接或留空
+
+3. **提取数据契约 + 一致性校验**: 读 PRD 的「数据契约」章节, 拿到 operationId 列表 + 状态 + 错误码映射
 
    对每个 operationId 按状态分类校验:
 
@@ -61,8 +80,8 @@ outputs: ["tasks.json"]
    - 🆕 接口 stub 评审通过后, 有两条路径:
      - **推荐**: 合并进主 `openapi.json` (由后端或前端推 PR)
      - **兜底**: 进 `workspace/api-spec/openapi.local.json`, 供前端本地开发, 后端实现后移除
-3. **识别复用**: 检查 CLAUDE.md 中的已有组件库, 标注哪些可以复用
-4. **拆解任务**: 将需求拆解为具体的开发任务, **每个任务必须关联到一个 PRD 锚点**
+4. **识别复用**: 检查 CLAUDE.md 中的已有组件库, 标注哪些可以复用
+5. **拆解任务**: 将需求拆解为具体的开发任务, **每个任务必须关联到一个 PRD 锚点**
 
 ### 任务拆解的强制顺序
 
@@ -108,7 +127,7 @@ page       (页面装配)              ← 来源: PRD 交互流程
       "filePath": "workspace/src/features/xxx/xxx.ts",
       "description": "具体实现要求",
       "prdRef": "docs/prds/user-list.md#搜索表单",
-      "designRef": "Figma: <URL>#Frame-SearchForm 或 docs/designs/search-form.png 或空",
+      "designRef": "Figma: <URL>#Frame-SearchForm 或 docs/designs/screenshots/reference/xiaoguotu.png#TopBar 或空",
       "businessRules": [
         "手机号格式不合法时, 表单实时显示错误提示, 搜索按钮禁用",
         "所有字段为空时, 搜索按钮禁用",
@@ -135,7 +154,7 @@ page       (页面装配)              ← 来源: PRD 交互流程
 |------|------|------|------|
 | `prdRef` (顶层) | ✅ | 输入的 PRD 路径 | 整个模块的 PRD 入口 |
 | `task.prdRef` | ✅ | PRD 二级标题锚点 | 编码时写入源文件 `@prd` JSDoc |
-| `task.designRef` | ❌ | PRD「设计稿」章节的帧映射 | 编码时写入源文件 `@design` JSDoc, 无设计稿留空 |
+| `task.designRef` | ❌ | 分析步骤 2 产出的「设计区域 → 任务」映射 | 编码时写入源文件 `@design` JSDoc; 格式: `图片路径#区域名` 或 `Figma: <URL>#帧名`, 无设计稿留空 |
 | `task.businessRules` | ✅ | PRD「业务规则」���节原文 | 编码时���入源文件 `@rules` JSDoc, **必须照抄不要改��** |
 | `task.acceptanceCriteria` | ✅ | businessRules 的具体化 (含技术细节) | 编码完成自检, 可包含 UI/性能/兼容性等技术要求 |
 
